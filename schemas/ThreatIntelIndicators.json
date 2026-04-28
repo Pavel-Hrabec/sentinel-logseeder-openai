@@ -1,39 +1,81 @@
 {
   "columns": [
     { "name": "TimeGenerated", "type": "datetime" },
-    { "name": "IndicatorId", "type": "string" },
-    { "name": "IndicatorType", "type": "string", "values": ["ipv4-addr", "domain-name", "url", "file:hashes.SHA-256", "file:hashes.MD5", "email-addr", "ipv6-addr"] },
-    { "name": "IndicatorValues", "type": "dynamic", "values": [
-      ["203.0.113.42"],
-      ["malware-c2.example.com"],
-      ["http://malware-c2.example.com/beacon"],
-      ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
-      ["phisher@evil-domain.example.org"]
+    { "name": "Id", "type": "string", "values": [
+      "indicator--8e2e2d2a-1b2c-4f3a-9d4e-5f6a7b8c9d0e",
+      "indicator--1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "indicator--aabbccdd-eeff-0011-2233-445566778899",
+      "indicator--deadbeef-cafe-babe-feed-1234567890ab",
+      "indicator--c0ffee00-1234-5678-9abc-def012345678",
+      "indicator--feedface-aaaa-bbbb-cccc-ddddeeeeffff",
+      "indicator--01234567-89ab-cdef-0123-456789abcdef"
     ]},
-    { "name": "Source", "type": "string", "values": ["Microsoft Threat Intelligence", "Open Source Intelligence", "Anomali ThreatStream", "Recorded Future", "AlienVault OTX", "VirusTotal", "Custom"] },
-    { "name": "SourceConfidence", "type": "int", "values": [25, 50, 75, 85, 90, 95, 100] },
+    { "name": "SourceSystem", "type": "string", "values": ["LogSeeder"] },
+    { "name": "LastUpdateMethod", "type": "string", "values": ["Log Ingestion API"] },
+    { "name": "IsDeleted", "type": "boolean" },
     { "name": "IsActive", "type": "boolean" },
-    { "name": "Description", "type": "string", "values": ["Known malicious IP associated with ransomware C2", "Phishing domain targeting financial sector", "Exploit kit hosting URL", "File hash associated with Cobalt Strike beacon", "Email address used in BEC campaigns"] },
-    { "name": "Action", "type": "string", "values": ["alert", "allow", "block"] },
-    { "name": "ThreatTypes", "type": "dynamic", "values": [["malware"], ["phishing"], ["botnet", "C2"], ["ransomware"], ["exploit"]] },
-    { "name": "Tags", "type": "dynamic", "values": [["APT28", "C2"], ["phishing", "BEC"], ["ransomware", "Ryuk"], ["exploit", "CVE-2024-1234"], []] },
-    { "name": "TrafficLightProtocol", "type": "string", "values": ["white", "green", "amber", "red"] },
-    { "name": "KillChainPhases", "type": "dynamic", "values": [["delivery"], ["command-and-control"], ["actions-on-objectives"], ["reconnaissance", "weaponization"], []] },
-    { "name": "ExpirationDateTime", "type": "datetime" },
+    { "name": "Revoked", "type": "boolean" },
+    { "name": "ValidFrom", "type": "datetime" },
+    { "name": "ValidUntil", "type": "datetime" },
     { "name": "Created", "type": "datetime" },
-    { "name": "LastUpdatedDateTime", "type": "datetime" },
-    { "name": "ExternalReferences", "type": "dynamic", "values": [
-      [{"SourceName": "MITRE ATT&CK", "ExternalId": "T1566.001", "Url": "https://attack.mitre.org/techniques/T1566/001/"}],
-      [{"SourceName": "CVE", "ExternalId": "CVE-2024-1234", "Url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-1234"}],
-      []
+    { "name": "Modified", "type": "datetime" },
+    { "name": "Confidence", "type": "int", "values": [25, 40, 50, 60, 75, 80, 85, 90, 95, 100] },
+    { "name": "Pattern", "type": "string", "values": [
+      "[ipv4-addr:value = '203.0.113.42']",
+      "[ipv4-addr:value = '198.51.100.17']",
+      "[domain-name:value = 'malware-c2.example.com']",
+      "[domain-name:value = 'phish-login.example.org']",
+      "[url:value = 'http://malware-c2.example.com/beacon']",
+      "[url:value = 'https://phish-login.example.org/auth/signin']",
+      "[file:hashes.'SHA-256' = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855']",
+      "[file:hashes.MD5 = 'd41d8cd98f00b204e9800998ecf8427e']",
+      "[email-addr:value = 'phisher@evil-domain.example.org']",
+      "[ipv6-addr:value = '2001:db8::dead:beef']"
     ]},
-    { "name": "GranularMarkings", "type": "dynamic", "values": [[], [{"Language": "en", "MarkingRef": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"}]] },
-    { "name": "ConfidenceScore", "type": "int", "values": [25, 50, 75, 85, 90, 95, 100] },
+    { "name": "ObservableKey", "type": "string", "values": [
+      "ipv4-addr:value",
+      "ipv6-addr:value",
+      "domain-name:value",
+      "url:value",
+      "file:hashes.'SHA-256'",
+      "file:hashes.MD5",
+      "file:hashes.'SHA-1'",
+      "email-addr:value"
+    ]},
+    { "name": "ObservableValue", "type": "string", "values": [
+      "203.0.113.42",
+      "198.51.100.17",
+      "malware-c2.example.com",
+      "phish-login.example.org",
+      "http://malware-c2.example.com/beacon",
+      "https://phish-login.example.org/auth/signin",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "d41d8cd98f00b204e9800998ecf8427e",
+      "phisher@evil-domain.example.org",
+      "2001:db8::dead:beef"
+    ]},
+    { "name": "Tags", "type": "string", "values": [
+      "[\"malware\",\"C2\"]",
+      "[\"phishing\",\"BEC\"]",
+      "[\"ransomware\",\"Ryuk\"]",
+      "[\"APT28\"]",
+      "[\"exploit\",\"CVE-2024-1234\"]",
+      "[\"botnet\"]",
+      "[]"
+    ]},
+    { "name": "Data", "type": "dynamic", "values": [
+      {"type": "indicator", "spec_version": "2.1", "id": "indicator--8e2e2d2a-1b2c-4f3a-9d4e-5f6a7b8c9d0e", "indicator_types": ["malicious-activity"], "pattern": "[ipv4-addr:value = '203.0.113.42']", "pattern_type": "stix", "valid_from": "2026-04-01T00:00:00Z", "labels": ["malware", "C2"], "confidence": 85, "name": "Cobalt Strike C2 server", "description": "Known Cobalt Strike beacon C2"},
+      {"type": "indicator", "spec_version": "2.1", "id": "indicator--1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d", "indicator_types": ["malicious-activity", "attribution"], "pattern": "[domain-name:value = 'malware-c2.example.com']", "pattern_type": "stix", "valid_from": "2026-03-15T00:00:00Z", "labels": ["phishing"], "confidence": 90, "name": "Phishing domain", "description": "Domain used in phishing campaign", "kill_chain_phases": [{"kill_chain_name": "lockheed-martin-cyber-kill-chain", "phase_name": "delivery"}]},
+      {"type": "indicator", "spec_version": "2.1", "id": "indicator--aabbccdd-eeff-0011-2233-445566778899", "indicator_types": ["malicious-activity"], "pattern": "[url:value = 'http://malware-c2.example.com/beacon']", "pattern_type": "stix", "valid_from": "2026-04-10T00:00:00Z", "labels": ["malware"], "confidence": 75},
+      {"type": "indicator", "spec_version": "2.1", "id": "indicator--deadbeef-cafe-babe-feed-1234567890ab", "indicator_types": ["malicious-activity"], "pattern": "[file:hashes.'SHA-256' = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855']", "pattern_type": "stix", "valid_from": "2026-04-05T00:00:00Z", "labels": ["ransomware", "Ryuk"], "confidence": 95, "external_references": [{"source_name": "MITRE ATT&CK", "external_id": "T1486", "url": "https://attack.mitre.org/techniques/T1486/"}]},
+      {"type": "indicator", "spec_version": "2.1", "id": "indicator--c0ffee00-1234-5678-9abc-def012345678", "indicator_types": ["benign"], "pattern": "[email-addr:value = 'phisher@evil-domain.example.org']", "pattern_type": "stix", "valid_from": "2026-02-01T00:00:00Z", "labels": ["phishing", "BEC"], "confidence": 60}
+    ]},
     { "name": "AdditionalFields", "type": "dynamic", "values": [
-      {"FirstSeen": "2024-01-01T00:00:00Z", "LastSeen": "2024-01-15T12:00:00Z", "Severity": "High"},
-      {"FirstSeen": "2024-01-10T00:00:00Z", "LastSeen": "2024-01-15T18:00:00Z", "Severity": "Medium"},
+      {"FirstSeen": "2026-04-01T00:00:00Z", "LastSeen": "2026-04-20T12:00:00Z", "Severity": "High", "ThreatType": "Malware"},
+      {"FirstSeen": "2026-03-15T00:00:00Z", "LastSeen": "2026-04-25T18:00:00Z", "Severity": "Medium", "ThreatType": "Phishing"},
+      {"FirstSeen": "2026-04-10T00:00:00Z", "LastSeen": "2026-04-26T08:00:00Z", "Severity": "Critical", "ThreatType": "Ransomware"},
+      {"Severity": "Low"},
       {}
-    ]},
-    { "name": "SourceSystem", "type": "string", "values": ["SecurityGraph", "Azure Sentinel", "ThreatIntelligence"] }
+    ]}
   ]
 }
