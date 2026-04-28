@@ -196,6 +196,30 @@ Source: [Logs Ingestion API — Supported Tables](https://learn.microsoft.com/az
 
 ---
 
+## 🤖 Auto-Generated Scenarios from Atomic Red Team
+
+In addition to the curated scenarios above, the toolkit can automatically produce **product-agnostic attack scenarios from the [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) project**, keeping coverage current with community-maintained MITRE ATT&CK technique tests.
+
+Generated scenarios are written to [`scenarios/generated/`](scenarios/generated/) and follow the exact same format as the hand-built scenarios above, so they're consumable by `Invoke-AttackScenarioIngestion.ps1` after the usual product-selection step.
+
+### Current Coverage 
+
+| Technique | Name | Tables |
+|---|---|---|
+| T1003 | OS Credential Dumping | ProcessEvent, FileEvent |
+| T1005 | Data from Local System | FileEvent |
+| T1021 | Remote Services | Authentication |
+| T1053 | Scheduled Task/Job | ProcessEvent, RegistryEvent |
+| T1059 | Command and Scripting Interpreter | ProcessEvent |
+| T1078 | Valid Accounts | Authentication |
+| T1110 | Brute Force | Authentication |
+| T1136 | Create Account | AuditEvent |
+| T1486 | Data Encrypted for Impact | FileEvent, ProcessEvent |
+| T1547 | Boot or Logon Autostart Execution | RegistryEvent, ProcessEvent |
+
+
+---
+
 ## 📋 Attack Scenario Format
 
 Scenarios are defined in JSON with correlated entities and timed event phases:

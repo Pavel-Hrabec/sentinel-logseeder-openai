@@ -1,0 +1,89 @@
+{
+  "_comment": "Maps top-level MITRE ATT&CK technique IDs to ASIM table categories and a phase-builder hint. Sub-techniques inherit from their parent unless explicitly overridden. Tables reference existing files in schemas/.",
+  "techniques": {
+    "T1110": {
+      "name": "Brute Force",
+      "tactics": ["Credential Access"],
+      "tables": [
+        { "category": "Authentication", "schema": "schemas/ASimAuthenticationEventLogs.json", "rowCount": 80 }
+      ],
+      "phaseHint": "credential-bruteforce"
+    },
+    "T1078": {
+      "name": "Valid Accounts",
+      "tactics": ["Defense Evasion", "Persistence", "Privilege Escalation", "Initial Access"],
+      "tables": [
+        { "category": "Authentication", "schema": "schemas/ASimAuthenticationEventLogs.json", "rowCount": 40 }
+      ],
+      "phaseHint": "valid-accounts"
+    },
+    "T1021": {
+      "name": "Remote Services",
+      "tactics": ["Lateral Movement"],
+      "tables": [
+        { "category": "Authentication", "schema": "schemas/ASimAuthenticationEventLogs.json", "rowCount": 30 }
+      ],
+      "phaseHint": "lateral-auth"
+    },
+    "T1059": {
+      "name": "Command and Scripting Interpreter",
+      "tactics": ["Execution"],
+      "tables": [
+        { "category": "ProcessEvent", "schema": "schemas/ASimProcessEventLogs.json", "rowCount": 20 }
+      ],
+      "phaseHint": "command-execution"
+    },
+    "T1003": {
+      "name": "OS Credential Dumping",
+      "tactics": ["Credential Access"],
+      "tables": [
+        { "category": "ProcessEvent", "schema": "schemas/ASimProcessEventLogs.json", "rowCount": 10 },
+        { "category": "FileEvent", "schema": "schemas/ASimFileEventLogs.json", "rowCount": 6 }
+      ],
+      "phaseHint": "credential-dump"
+    },
+    "T1547": {
+      "name": "Boot or Logon Autostart Execution",
+      "tactics": ["Persistence", "Privilege Escalation"],
+      "tables": [
+        { "category": "RegistryEvent", "schema": "schemas/ASimRegistryEventLogs.json", "rowCount": 10 },
+        { "category": "ProcessEvent", "schema": "schemas/ASimProcessEventLogs.json", "rowCount": 5 }
+      ],
+      "phaseHint": "persistence-autostart"
+    },
+    "T1053": {
+      "name": "Scheduled Task/Job",
+      "tactics": ["Execution", "Persistence", "Privilege Escalation"],
+      "tables": [
+        { "category": "ProcessEvent", "schema": "schemas/ASimProcessEventLogs.json", "rowCount": 10 },
+        { "category": "RegistryEvent", "schema": "schemas/ASimRegistryEventLogs.json", "rowCount": 4 }
+      ],
+      "phaseHint": "scheduled-task"
+    },
+    "T1136": {
+      "name": "Create Account",
+      "tactics": ["Persistence"],
+      "tables": [
+        { "category": "AuditEvent", "schema": "schemas/ASimAuditEventLogs.json", "rowCount": 6 }
+      ],
+      "phaseHint": "create-account"
+    },
+    "T1486": {
+      "name": "Data Encrypted for Impact",
+      "tactics": ["Impact"],
+      "tables": [
+        { "category": "FileEvent", "schema": "schemas/ASimFileEventLogs.json", "rowCount": 200 },
+        { "category": "ProcessEvent", "schema": "schemas/ASimProcessEventLogs.json", "rowCount": 5 }
+      ],
+      "phaseHint": "ransomware-encrypt"
+    },
+    "T1005": {
+      "name": "Data from Local System",
+      "tactics": ["Collection"],
+      "tables": [
+        { "category": "FileEvent", "schema": "schemas/ASimFileEventLogs.json", "rowCount": 30 }
+      ],
+      "phaseHint": "data-collect"
+    }
+  }
+}

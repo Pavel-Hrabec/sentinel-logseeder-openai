@@ -1,0 +1,76 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1136",
+    "generatedAt": "2026-04-28T12:51:22.5503648Z",
+    "contentHash": "EFE95D437E340C24DCA673FE6B34760EF96E202028551D0B752007DB5C15035E",
+    "subTechniques": [
+      "T1136.001",
+      "T1136.002"
+    ],
+    "testCount": 15
+  },
+  "name": "atomic-t1136-create-account",
+  "description": "Auto-generated from Atomic Red Team. Technique T1136 - Create Account. Includes sub-techniques: T1136.001, T1136.002. Total atomic tests merged: 15.",
+  "mitreTactics": [
+    "Persistence"
+  ],
+  "mitreIds": [
+    "T1136",
+    "T1136.001",
+    "T1136.002"
+  ],
+  "tables": {
+    "AuditEvent": {
+      "schema": "schemas/ASimAuditEventLogs.json",
+      "rowCount": 6
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Persistence - Account Created (T1136)",
+      "description": "New local or domain account created (Create Account).",
+      "offsetMinutes": 0,
+      "durationMinutes": 2,
+      "table": "AuditEvent",
+      "count": 3,
+      "eventTemplate": {
+        "EventType": "Create",
+        "EventResult": "Success",
+        "EventSeverity": "Medium",
+        "Operation": [
+          "UserCreated",
+          "AccountCreated",
+          "AddMemberToGroup"
+        ],
+        "Object": [
+          "svc_backup",
+          "admin2",
+          "helpdesk_t1",
+          "support_local"
+        ],
+        "ObjectType": "User",
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

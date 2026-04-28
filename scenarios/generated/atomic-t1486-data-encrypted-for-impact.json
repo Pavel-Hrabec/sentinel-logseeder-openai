@@ -1,0 +1,108 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1486",
+    "generatedAt": "2026-04-28T13:29:57.7921968Z",
+    "contentHash": "C8088DBCC16B8F8FEB77869D37A5FE37D14F33E9C0ACEA36623B442883F325AB",
+    "subTechniques": [
+      "T1486"
+    ],
+    "testCount": 10
+  },
+  "name": "atomic-t1486-data-encrypted-for-impact",
+  "description": "Auto-generated from Atomic Red Team. Technique T1486 - Data Encrypted for Impact. Includes sub-techniques: T1486. Total atomic tests merged: 10.",
+  "mitreTactics": [
+    "Impact"
+  ],
+  "mitreIds": [
+    "T1486"
+  ],
+  "tables": {
+    "FileEvent": {
+      "schema": "schemas/ASimFileEventLogs.json",
+      "rowCount": 200
+    },
+    "ProcessEvent": {
+      "schema": "schemas/ASimProcessEventLogs.json",
+      "rowCount": 5
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Impact - Mass File Encryption (T1486)",
+      "description": "High-volume file modifications consistent with ransomware encryption (Data Encrypted for Impact).",
+      "offsetMinutes": 0,
+      "durationMinutes": 15,
+      "table": "FileEvent",
+      "count": 250,
+      "eventTemplate": {
+        "EventType": [
+          "FileModified",
+          "FileRenamed",
+          "FileCreated"
+        ],
+        "EventResult": "Success",
+        "EventSeverity": "High",
+        "TargetFilePath": [
+          "C:\\\\Users\\\\{{victim.username}}\\\\Documents\\\\report.docx.locked",
+          "C:\\\\Users\\\\{{victim.username}}\\\\Pictures\\\\photo.jpg.crypt",
+          "C:\\\\Users\\\\{{victim.username}}\\\\Desktop\\\\budget.xlsx.enc",
+          "D:\\\\Shares\\\\Finance\\\\ledger.xlsx.locked",
+          "D:\\\\Shares\\\\HR\\\\contract.pdf.crypt"
+        ],
+        "ActingProcessName": [
+          "rundll32.exe",
+          "svchost.exe",
+          "wmiprvse.exe",
+          "powershell.exe"
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    },
+    {
+      "phase": "Impact - Shadow Copy Deletion (T1486)",
+      "description": "vssadmin / wmic used to delete shadow copies before encryption.",
+      "offsetMinutes": 0,
+      "durationMinutes": 1,
+      "table": "ProcessEvent",
+      "count": 3,
+      "eventTemplate": {
+        "EventType": "ProcessCreated",
+        "EventResult": "Success",
+        "EventSeverity": "High",
+        "TargetProcessName": [
+          "vssadmin.exe",
+          "wmic.exe",
+          "wbadmin.exe"
+        ],
+        "TargetProcessCommandLine": [
+          "vssadmin.exe delete shadows /all /quiet",
+          "wmic.exe shadowcopy delete",
+          "wbadmin.exe delete catalog -quiet"
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

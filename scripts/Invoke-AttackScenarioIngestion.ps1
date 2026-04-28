@@ -243,6 +243,7 @@ if ($Ingest) {
 
     # Calculate the scenario anchor time (now minus the time window)
     $scenarioStart = (Get-Date).ToUniversalTime().AddHours(-$TimeWindowHours)
+    Write-Host "Scenario base TimeGenerated (UTC): $($scenarioStart.ToString('yyyy-MM-ddTHH:mm:ss.fffZ'))  (TimeWindowHours=$TimeWindowHours)" -ForegroundColor DarkCyan
 
     # Group timeline phases by table so we can batch-generate
     $tableRecords = @{}

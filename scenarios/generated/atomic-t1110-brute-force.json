@@ -1,0 +1,103 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1110",
+    "generatedAt": "2026-04-28T13:29:57.7447510Z",
+    "contentHash": "E801FC35C0D6C0F6747C0F7CEE4A565EF1772C7AC748E58D4063A6EB22BC392E",
+    "subTechniques": [
+      "T1110.001",
+      "T1110.002",
+      "T1110.003",
+      "T1110.004"
+    ],
+    "testCount": 22
+  },
+  "name": "atomic-t1110-brute-force",
+  "description": "Auto-generated from Atomic Red Team. Technique T1110 - Brute Force. Includes sub-techniques: T1110.001, T1110.002, T1110.003, T1110.004. Total atomic tests merged: 22.",
+  "mitreTactics": [
+    "Credential Access"
+  ],
+  "mitreIds": [
+    "T1110",
+    "T1110.001",
+    "T1110.002",
+    "T1110.003",
+    "T1110.004"
+  ],
+  "tables": {
+    "Authentication": {
+      "schema": "schemas/ASimAuthenticationEventLogs.json",
+      "rowCount": 80
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Brute Force - Failed Logons (T1110)",
+      "description": "Repeated failed authentication attempts characteristic of Brute Force.",
+      "offsetMinutes": 0,
+      "durationMinutes": 20,
+      "table": "Authentication",
+      "count": 60,
+      "eventTemplate": {
+        "EventType": "Logon",
+        "EventResult": "Failure",
+        "EventResultDetails": [
+          "InvalidPassword",
+          "NoSuchUser",
+          "AccountLocked"
+        ],
+        "EventSeverity": "Low",
+        "SrcIpAddr": "{{attacker.ip}}",
+        "TargetUsername": "{{victim.username}}",
+        "TargetUsernameType": "Simple",
+        "LogonMethod": [
+          "Remote",
+          "Interactive"
+        ],
+        "LogonProtocol": [
+          "RDP",
+          "SSH",
+          "Kerberos",
+          "NTLM"
+        ],
+        "EventCount": 1
+      }
+    },
+    {
+      "phase": "Brute Force - Successful Logon (T1110)",
+      "description": "Attacker eventually authenticates successfully.",
+      "offsetMinutes": 22,
+      "durationMinutes": 1,
+      "table": "Authentication",
+      "count": 1,
+      "eventTemplate": {
+        "EventType": "Logon",
+        "EventResult": "Success",
+        "EventSeverity": "Informational",
+        "SrcIpAddr": "{{attacker.ip}}",
+        "TargetUsername": "{{victim.username}}",
+        "TargetUsernameType": "Simple",
+        "LogonMethod": "Remote",
+        "LogonProtocol": "RDP",
+        "EventCount": 1
+      }
+    }
+  ]
+}

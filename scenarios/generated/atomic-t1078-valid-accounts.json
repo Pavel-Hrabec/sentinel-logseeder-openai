@@ -1,0 +1,78 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1078",
+    "generatedAt": "2026-04-28T12:51:22.5377347Z",
+    "contentHash": "9D4DE7EF9F000E72B71DF1911E6CAAE25686D531BF1FE23E35101C132B9A6D57",
+    "subTechniques": [
+      "T1078.001",
+      "T1078.003"
+    ],
+    "testCount": 16
+  },
+  "name": "atomic-t1078-valid-accounts",
+  "description": "Auto-generated from Atomic Red Team. Technique T1078 - Valid Accounts. Includes sub-techniques: T1078.001, T1078.003. Total atomic tests merged: 16.",
+  "mitreTactics": [
+    "Defense Evasion",
+    "Persistence",
+    "Privilege Escalation",
+    "Initial Access"
+  ],
+  "mitreIds": [
+    "T1078",
+    "T1078.001",
+    "T1078.003"
+  ],
+  "tables": {
+    "Authentication": {
+      "schema": "schemas/ASimAuthenticationEventLogs.json",
+      "rowCount": 40
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Valid Accounts - Anomalous Sign-in (T1078)",
+      "description": "Successful authentication using stolen or default credentials.",
+      "offsetMinutes": 0,
+      "durationMinutes": 10,
+      "table": "Authentication",
+      "count": 5,
+      "eventTemplate": {
+        "EventType": "Logon",
+        "EventResult": "Success",
+        "EventSeverity": "Informational",
+        "SrcIpAddr": "{{attacker.ip}}",
+        "TargetUsername": "{{victim.username}}",
+        "TargetUsernameType": "Simple",
+        "LogonMethod": [
+          "Remote",
+          "Interactive",
+          "Network"
+        ],
+        "LogonProtocol": [
+          "Kerberos",
+          "NTLM",
+          "RDP"
+        ],
+        "EventCount": 1
+      }
+    }
+  ]
+}

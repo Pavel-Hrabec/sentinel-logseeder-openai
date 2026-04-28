@@ -1,0 +1,79 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1021",
+    "generatedAt": "2026-04-28T12:51:22.4686641Z",
+    "contentHash": "127DCD36BBFAD1A2B993F6A1D28BDCB873275C1468E1BE9AFFAD2D43365F0638",
+    "subTechniques": [
+      "T1021.001",
+      "T1021.002",
+      "T1021.003",
+      "T1021.004",
+      "T1021.006"
+    ],
+    "testCount": 15
+  },
+  "name": "atomic-t1021-remote-services",
+  "description": "Auto-generated from Atomic Red Team. Technique T1021 - Remote Services. Includes sub-techniques: T1021.001, T1021.002, T1021.003, T1021.004, T1021.006. Total atomic tests merged: 15.",
+  "mitreTactics": [
+    "Lateral Movement"
+  ],
+  "mitreIds": [
+    "T1021",
+    "T1021.001",
+    "T1021.002",
+    "T1021.003",
+    "T1021.004",
+    "T1021.006"
+  ],
+  "tables": {
+    "Authentication": {
+      "schema": "schemas/ASimAuthenticationEventLogs.json",
+      "rowCount": 30
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Lateral Movement - Auth on Remote Host (T1021)",
+      "description": "Authentication to a remote system over a remote service (Remote Services).",
+      "offsetMinutes": 0,
+      "durationMinutes": 5,
+      "table": "Authentication",
+      "count": 4,
+      "eventTemplate": {
+        "EventType": "Logon",
+        "EventResult": "Success",
+        "EventSeverity": "Informational",
+        "SrcIpAddr": "{{victim.ip}}",
+        "TargetUsername": "{{victim.username}}",
+        "TargetUsernameType": "Simple",
+        "LogonMethod": "Remote",
+        "LogonProtocol": [
+          "RDP",
+          "SMB",
+          "WinRM",
+          "SSH"
+        ],
+        "DvcHostname": "{{targetServer.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

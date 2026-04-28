@@ -1,0 +1,77 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1005",
+    "generatedAt": "2026-04-28T12:51:22.4501953Z",
+    "contentHash": "6534F1B66645B458F45A95CDAAD4186BE58A5DEBD56B8AE84AC97CF24A71B052",
+    "subTechniques": [
+      "T1005"
+    ],
+    "testCount": 3
+  },
+  "name": "atomic-t1005-data-from-local-system",
+  "description": "Auto-generated from Atomic Red Team. Technique T1005 - Data from Local System. Includes sub-techniques: T1005. Total atomic tests merged: 3.",
+  "mitreTactics": [
+    "Collection"
+  ],
+  "mitreIds": [
+    "T1005"
+  ],
+  "tables": {
+    "FileEvent": {
+      "schema": "schemas/ASimFileEventLogs.json",
+      "rowCount": 30
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Collection - Sensitive File Access (T1005)",
+      "description": "Sequential access to sensitive files for collection (Data from Local System).",
+      "offsetMinutes": 0,
+      "durationMinutes": 10,
+      "table": "FileEvent",
+      "count": 35,
+      "eventTemplate": {
+        "EventType": [
+          "FileAccessed",
+          "FileRead",
+          "FileCopied"
+        ],
+        "EventResult": "Success",
+        "TargetFilePath": [
+          "C:\\\\Users\\\\{{victim.username}}\\\\Documents\\\\passwords.xlsx",
+          "C:\\\\Users\\\\{{victim.username}}\\\\Documents\\\\customers.csv",
+          "D:\\\\Shares\\\\Finance\\\\Q4-2025.xlsx",
+          "D:\\\\Shares\\\\HR\\\\employees.csv",
+          "C:\\\\Users\\\\{{victim.username}}\\\\Desktop\\\\source.zip"
+        ],
+        "ActingProcessName": [
+          "powershell.exe",
+          "explorer.exe",
+          "7z.exe",
+          "rar.exe"
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

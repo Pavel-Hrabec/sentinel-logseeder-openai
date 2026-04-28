@@ -1,0 +1,106 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1053",
+    "generatedAt": "2026-04-28T12:51:22.5013086Z",
+    "contentHash": "70E1D2E509DEAEA6AD2573D44807BAEEB6B5D1C10B78B5BC053D89E42E37AA31",
+    "subTechniques": [
+      "T1053.002",
+      "T1053.005"
+    ],
+    "testCount": 15
+  },
+  "name": "atomic-t1053-scheduled-taskjob",
+  "description": "Auto-generated from Atomic Red Team. Technique T1053 - Scheduled Task/Job. Includes sub-techniques: T1053.002, T1053.005. Total atomic tests merged: 15.",
+  "mitreTactics": [
+    "Execution",
+    "Persistence",
+    "Privilege Escalation"
+  ],
+  "mitreIds": [
+    "T1053",
+    "T1053.002",
+    "T1053.005"
+  ],
+  "tables": {
+    "ProcessEvent": {
+      "schema": "schemas/ASimProcessEventLogs.json",
+      "rowCount": 10
+    },
+    "RegistryEvent": {
+      "schema": "schemas/ASimRegistryEventLogs.json",
+      "rowCount": 4
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Scheduled Task - Creation (T1053)",
+      "description": "schtasks.exe / at.exe used to register a scheduled task (Scheduled Task/Job).",
+      "offsetMinutes": 0,
+      "durationMinutes": 2,
+      "table": "ProcessEvent",
+      "count": 4,
+      "eventTemplate": {
+        "EventType": "ProcessCreated",
+        "EventResult": "Success",
+        "EventSeverity": "Medium",
+        "ActingProcessName": [
+          "cmd.exe",
+          "powershell.exe"
+        ],
+        "TargetProcessName": [
+          "schtasks.exe",
+          "at.exe"
+        ],
+        "TargetProcessCommandLine": [
+          "at 13:20 /interactive cmd",
+          "echo \"#{at_command}\" | at #{time_spec}",
+          "kubectl run #{pod_name} --image=#{image_name} --restart=Never --attach --rm -i -- bash -lc \"apt-get update -y >/dev/null 2>&1 && apt-get install -y at >/dev/null 2>&1 && (atd || /usr/sbin/atd) && echo '#{at_command}' | at #{time_spec} && at -l\"",
+          "schtasks /create /tn \"T1053_005_OnLogon\" /sc onlogon /tr \"cmd.exe /c calc.exe\" schtasks /create /tn \"T1053_005_OnStartup\" /sc onstart /ru system /tr \"cmd.exe /c calc.exe\""
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    },
+    {
+      "phase": "Scheduled Task - Registry/Tree Update (T1053)",
+      "description": "TaskCache registry tree updated for new task.",
+      "offsetMinutes": 1,
+      "durationMinutes": 1,
+      "table": "RegistryEvent",
+      "count": 2,
+      "eventTemplate": {
+        "EventType": "RegistryKeyCreated",
+        "EventResult": "Success",
+        "RegistryKey": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree",
+        "RegistryValueName": [
+          "Id",
+          "Path",
+          "Hash"
+        ],
+        "RegistryValueType": "Reg_Sz",
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

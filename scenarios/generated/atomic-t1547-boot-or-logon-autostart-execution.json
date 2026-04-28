@@ -1,0 +1,134 @@
+{
+  "_generated": {
+    "source": "atomic-red-team",
+    "techniqueId": "T1547",
+    "generatedAt": "2026-04-28T12:51:22.5669781Z",
+    "contentHash": "7C368A4F097F7DD34D4301176AB906B3D192172D521DCFD364A3EF555823DCB1",
+    "subTechniques": [
+      "T1547",
+      "T1547.001",
+      "T1547.002",
+      "T1547.003",
+      "T1547.004",
+      "T1547.005",
+      "T1547.006",
+      "T1547.008",
+      "T1547.009",
+      "T1547.010",
+      "T1547.012",
+      "T1547.014",
+      "T1547.015"
+    ],
+    "testCount": 47
+  },
+  "name": "atomic-t1547-boot-or-logon-autostart-execution",
+  "description": "Auto-generated from Atomic Red Team. Technique T1547 - Boot or Logon Autostart Execution. Includes sub-techniques: T1547, T1547.001, T1547.002, T1547.003, T1547.004, T1547.005, T1547.006, T1547.008, T1547.009, T1547.010, T1547.012, T1547.014, T1547.015. Total atomic tests merged: 47.",
+  "mitreTactics": [
+    "Persistence",
+    "Privilege Escalation"
+  ],
+  "mitreIds": [
+    "T1547",
+    "T1547.001",
+    "T1547.002",
+    "T1547.003",
+    "T1547.004",
+    "T1547.005",
+    "T1547.006",
+    "T1547.008",
+    "T1547.009",
+    "T1547.010",
+    "T1547.012",
+    "T1547.014",
+    "T1547.015"
+  ],
+  "tables": {
+    "RegistryEvent": {
+      "schema": "schemas/ASimRegistryEventLogs.json",
+      "rowCount": 10
+    },
+    "ProcessEvent": {
+      "schema": "schemas/ASimProcessEventLogs.json",
+      "rowCount": 5
+    }
+  },
+  "actors": {
+    "attacker": {
+      "ip": "external",
+      "username": null
+    },
+    "victim": {
+      "ip": "internal",
+      "username": "random",
+      "upn": "random",
+      "device": "random"
+    },
+    "targetServer": {
+      "ip": "internal",
+      "device": "random",
+      "deviceFqdn": "random"
+    }
+  },
+  "timeline": [
+    {
+      "phase": "Persistence - Autostart Registry Modification (T1547)",
+      "description": "Registry changes establishing autostart persistence (Boot or Logon Autostart Execution).",
+      "offsetMinutes": 0,
+      "durationMinutes": 2,
+      "table": "RegistryEvent",
+      "count": 4,
+      "eventTemplate": {
+        "EventType": [
+          "RegistryValueSet",
+          "RegistryKeyCreated"
+        ],
+        "EventResult": "Success",
+        "EventSeverity": "Medium",
+        "RegistryKey": [
+          "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+          "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+          "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+          "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services"
+        ],
+        "RegistryValueName": [
+          "Updater",
+          "OneDriveSync",
+          "SecurityHealth",
+          "Shell"
+        ],
+        "RegistryValueType": [
+          "Reg_Sz",
+          "Reg_ExpandSz"
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    },
+    {
+      "phase": "Persistence - Process Spawned at Logon (T1547)",
+      "description": "Persisted binary executes on next logon.",
+      "offsetMinutes": 5,
+      "durationMinutes": 1,
+      "table": "ProcessEvent",
+      "count": 2,
+      "eventTemplate": {
+        "EventType": "ProcessCreated",
+        "EventResult": "Success",
+        "ActingProcessName": "explorer.exe",
+        "TargetProcessName": [
+          "updater.exe",
+          "svchost.exe",
+          "wscript.exe"
+        ],
+        "TargetProcessCommandLine": [
+          "C:\\\\Users\\\\Public\\\\updater.exe",
+          "wscript.exe C:\\\\Users\\\\Public\\\\run.vbs"
+        ],
+        "ActorUsername": "{{victim.username}}",
+        "DvcHostname": "{{victim.device}}",
+        "EventCount": 1
+      }
+    }
+  ]
+}

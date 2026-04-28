@@ -304,7 +304,25 @@ At runtime, the agent must:
        -ScenarioFile "scenarios\<scenario-name>-runtime.json" `
        -Deploy -Ingest
    ```
-9. **Verify** — query each table for recent data
+9. **Present a post-ingestion summary table (mandatory)** — see *Post-Ingestion Summary* below
+10. **Verify** — query each table for recent data
+
+### Post-Ingestion Summary (Mandatory for All Attack Scenarios)
+
+After every successful attack scenario ingestion (and after creating a new scenario that was ingested), the agent **must** present a summary to the user with:
+
+1. **Scenario base `TimeGenerated` (UTC)** — the anchor timestamp from which all phase offsets are computed. Captured from the script's `Scenario base TimeGenerated (UTC):` line (equals `now() - TimeWindowHours`, default 4h).
+2. **A summary table** with the following columns:
+
+| Column | Description |
+|---|---|
+| **Table** | The destination Sentinel/Log Analytics table name (e.g., `ASimProcessEventLogs`) |
+| **Phase / Timeline** | Phase name and time offset (e.g., `Phase 1 — Initial Access (+0m, 30m duration)`) |
+| **Phase Start (UTC)** | Absolute UTC time = base + offsetMinutes |
+| **Record Type / Activity** | The kind of events ingested that define the attack (e.g., `Failed sign-ins`, `LSASS process dump`, `SAM file access`) — derived from the phase's `eventTemplate` (EventType, TargetProcessName, TargetFilePath, etc.) |
+| **Count** | Number of records ingested for that phase |
+
+One row per timeline phase. If a single table is used across multiple phases, list each phase as a separate row. Include a final note with the verification KQL queries.
 
 ### When the user asks to create a new attack scenario
 
