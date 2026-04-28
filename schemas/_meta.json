@@ -504,7 +504,7 @@
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "CommonSecurityLog"
+        "CommonSecurityLog-CiscoASA"
       ]
     },
     {
@@ -600,7 +600,7 @@
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "CommonSecurityLog"
+        "CommonSecurityLog-ClarotyxDome"
       ]
     },
     {
@@ -1620,7 +1620,7 @@
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "CommonSecurityLog"
+        "CommonSecurityLog-InfobloxCDC"
       ]
     },
     {
@@ -1635,7 +1635,7 @@
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "CommonSecurityLog"
+        "CommonSecurityLog-InfobloxSOCInsight"
       ]
     },
     {
@@ -2729,7 +2729,7 @@
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "CommonSecurityLog"
+        "CommonSecurityLog-Silverfort"
       ]
     },
     {
