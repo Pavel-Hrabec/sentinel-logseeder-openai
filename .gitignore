@@ -31,4 +31,5 @@ node_modules/
 *.pfx
 *.key
 config/workspace.json.template
+config/workspace copy.json
 scenarios/*runtime.json
