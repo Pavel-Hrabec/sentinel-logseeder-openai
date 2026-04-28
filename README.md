@@ -23,22 +23,6 @@ A Microsoft Sentinel toolkit for generating and ingesting **realistic sample dat
 
 ---
 
-## 📂 Project Structure
-
-| Folder / File | Purpose |
-|---|---|
-| `scripts/Invoke-SampleDataIngestion.ps1` | Core engine — deploys infrastructure and ingests sample data for a single table |
-| `scripts/Invoke-AttackScenarioIngestion.ps1` | Orchestrator — reads a scenario definition and ingests correlated data across multiple tables |
-| `config/workspace.json` | Workspace identifier — typically just `workspaceName`; other coordinates are auto-resolved from `az` context |
-| `config/entities.json` | Entity pools (users, IPs, devices, domains, URLs, emails) shared across all ingestion |
-| `schemas/` | Table schema definitions (JSON) — created by the agent or manually. Pre-populated with most built-in schemas that support direct ingestion  |
-| `samples/` | Sample data files (JSON/CSV) for realistic value distributions |
-| `scenarios/` | Attack scenario definitions (JSON) — pre-built and custom |
-| `.github/skills/sentinel-logseeder/SKILL.md` | AI agent skill file for GitHub Copilot-driven ingestion workflows |
-| `.github/` | GitHub Copilot agent definition and instructions |
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -122,7 +106,23 @@ Sample GitHub Copilot prompts:
 
 ---
 
-## � Supported Tables
+## 📂 Project Structure
+
+| Folder / File | Purpose |
+|---|---|
+| `scripts/Invoke-SampleDataIngestion.ps1` | Core engine — deploys infrastructure and ingests sample data for a single table |
+| `scripts/Invoke-AttackScenarioIngestion.ps1` | Orchestrator — reads a scenario definition and ingests correlated data across multiple tables |
+| `config/workspace.json` | Workspace identifier — typically just `workspaceName`; other coordinates are auto-resolved from `az` context |
+| `config/entities.json` | Entity pools (users, IPs, devices, domains, URLs, emails) shared across all ingestion |
+| `schemas/` | Table schema definitions (JSON) — created by the agent or manually. Pre-populated with most built-in schemas that support direct ingestion  |
+| `samples/` | Sample data files (JSON/CSV) for realistic value distributions |
+| `scenarios/` | Attack scenario definitions (JSON) — pre-built and custom |
+| `.github/skills/sentinel-logseeder/SKILL.md` | AI agent skill file for GitHub Copilot-driven ingestion workflows |
+| `.github/` | GitHub Copilot agent definition and instructions |
+
+---
+
+## 📥 Supported Tables
 
 This tool uses the [Azure Monitor Logs Ingestion API](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview) to send data. The API only supports ingestion into **custom log tables** (with a `_CL` suffix) and a specific set of **built-in Azure tables**. You **cannot** ingest data into vendor-managed tables such as `SigninLogs`, `AuditLogs`, `DeviceProcessEvents`, etc. — those are populated exclusively by their respective products.
 
