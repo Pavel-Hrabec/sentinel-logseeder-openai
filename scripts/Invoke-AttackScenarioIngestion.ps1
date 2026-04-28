@@ -83,6 +83,9 @@ if (-not (Test-Path $singleTableScript)) {
     throw "Invoke-SampleDataIngestion.ps1 not found at: $singleTableScript"
 }
 
+# Load shared workspace-context resolver
+. (Join-Path $scriptDir "_WorkspaceContext.ps1")
+
 # ---------------------------------------------------------------------------
 # Load scenario definition
 # ---------------------------------------------------------------------------
@@ -472,7 +475,7 @@ if ($Ingest) {
     Write-Host "`n--- Ingesting scenario data ---`n" -ForegroundColor Magenta
 
     # Read workspace config for token and deployment info
-    $wsConfig = Get-Content -Path $WorkspaceConfig -Raw | ConvertFrom-Json
+    $wsConfig = Resolve-WorkspaceContext -ConfigPath $WorkspaceConfig
 
     # Get access token
     $token = $null
@@ -593,7 +596,7 @@ if ($Ingest) {
     # Print verification queries
     Write-Host "Verify with:" -ForegroundColor Cyan
     foreach ($tableName in $tableNames) {
-        Write-Host "  az monitor log-analytics query --workspace $($wsConfig.workspaceId) --analytics-query `"$tableName | where TimeGenerated > ago(1h) | take 10`"" -ForegroundColor DarkCyan
+        Write-Host "  az monitor log-analytics query --workspace $($wsConfig.WorkspaceId) --analytics-query `"$tableName | where TimeGenerated > ago(1h) | take 10`"" -ForegroundColor DarkCyan
     }
 }
 

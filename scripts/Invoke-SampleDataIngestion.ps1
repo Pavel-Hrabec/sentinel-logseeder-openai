@@ -41,8 +41,9 @@ When specified, creates or reuses DCE, DCR, and custom table resources in Azure.
 .PARAMETER Ingest
 When specified, generates sample data and ingests it via the Logs Ingestion API.
 
-.PARAMETER TimeWindowHours
-Time spread for generated timestamps. Default: 24 hours.
+.PARAMETER TimeWindowMinutes
+Time spread for generated TimeGenerated timestamps, in minutes. Default: 30 minutes.
+Increase this only when the user explicitly requests a wider time window.
 
 .PARAMETER TenantId
 Microsoft Entra tenant ID for service principal auth (optional fallback).
@@ -76,7 +77,7 @@ param(
 
     [switch]$Ingest,
 
-    [int]$TimeWindowHours = 24,
+    [int]$TimeWindowMinutes = 30,
 
     [string]$TenantId,
 
@@ -94,6 +95,7 @@ $ErrorActionPreference = "Stop"
 # Resolve default paths relative to project root (parent of scripts/)
 # ---------------------------------------------------------------------------
 $basePath = if ($PSScriptRoot) { Split-Path $PSScriptRoot -Parent } else { (Get-Location).Path }
+$scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Join-Path $basePath "scripts" }
 
 if (-not $WorkspaceConfig) {
     $WorkspaceConfig = Join-Path $basePath "config" "workspace.json"
@@ -101,6 +103,9 @@ if (-not $WorkspaceConfig) {
 if (-not $EntitiesFile) {
     $EntitiesFile = Join-Path $basePath "config" "entities.json"
 }
+
+# Load shared workspace-context resolver
+. (Join-Path $scriptDir "_WorkspaceContext.ps1")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
@@ -195,20 +200,7 @@ function Get-AccessToken {
 
 function Read-WorkspaceConfig {
     param([string]$ConfigPath)
-    if (-not (Test-Path $ConfigPath)) {
-        throw "Workspace config not found: $ConfigPath"
-    }
-    $cfg = Get-Content -Path $ConfigPath -Raw | ConvertFrom-Json
-    $resourceId = "/subscriptions/$($cfg.subscriptionId)/resourceGroups/$($cfg.resourceGroup)/providers/Microsoft.OperationalInsights/workspaces/$($cfg.workspaceName)"
-    return @{
-        TenantId            = $cfg.tenantId
-        SubscriptionId      = $cfg.subscriptionId
-        ResourceGroup       = $cfg.resourceGroup
-        WorkspaceName       = $cfg.workspaceName
-        WorkspaceId         = $cfg.workspaceId
-        WorkspaceResourceId = $resourceId
-        DceName             = if ($cfg.PSObject.Properties['dceName'] -and $cfg.dceName) { $cfg.dceName } else { "sample-data-dce" }
-    }
+    return Resolve-WorkspaceContext -ConfigPath $ConfigPath
 }
 
 function Resolve-WorkspaceLocation {
@@ -640,14 +632,14 @@ function New-RandomValueForType {
     param(
         [string]$ColumnType,
         [string]$ColumnName,
-        [int]$WindowHours
+        [int]$WindowMinutes
     )
 
     $nameLower = $ColumnName.ToLowerInvariant()
 
     switch ($ColumnType.ToLowerInvariant()) {
         "datetime" {
-            $offsetSeconds = Get-Random -Minimum 0 -Maximum ($WindowHours * 3600)
+            $offsetSeconds = Get-Random -Minimum 0 -Maximum ($WindowMinutes * 60)
             return (Get-Date).ToUniversalTime().AddSeconds(-$offsetSeconds).ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
         }
         { $_ -in @("int", "long") } {
@@ -714,7 +706,7 @@ function New-SampleRecords {
         [object[]]$ColumnDefinitions,
         [object]$Entities,
         [int]$Count,
-        [int]$WindowHours,
+        [int]$WindowMinutes,
         [object[]]$SampleData
     )
 
@@ -742,7 +734,7 @@ function New-SampleRecords {
 
             # Priority 1: TimeGenerated always gets a fresh timestamp
             if ($colName -eq "TimeGenerated") {
-                $offsetSeconds = Get-Random -Minimum 0 -Maximum ($WindowHours * 3600)
+                $offsetSeconds = Get-Random -Minimum 0 -Maximum ($WindowMinutes * 60)
                 $record[$colName] = (Get-Date).ToUniversalTime().AddSeconds(-$offsetSeconds).ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
                 continue
             }
@@ -770,7 +762,7 @@ function New-SampleRecords {
             }
 
             # Priority 5: Type-based random generation
-            $record[$colName] = New-RandomValueForType -ColumnType $colType -ColumnName $colName -WindowHours $WindowHours
+            $record[$colName] = New-RandomValueForType -ColumnType $colType -ColumnName $colName -WindowMinutes $WindowMinutes
         }
 
         $records += [pscustomobject]$record
@@ -1050,7 +1042,7 @@ if ($Ingest) {
     # Generate sample records
     Write-Host "Generating $RowCount sample records..." -ForegroundColor Cyan
     $records = New-SampleRecords -ColumnDefinitions $columnDefs -Entities $entities `
-        -Count $RowCount -WindowHours $TimeWindowHours -SampleData $sampleData
+        -Count $RowCount -WindowMinutes $TimeWindowMinutes -SampleData $sampleData
     Write-Host "Generated $($records.Count) records." -ForegroundColor Green
 
     # Send to Log Ingestion API

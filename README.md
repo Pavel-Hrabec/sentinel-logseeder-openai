@@ -26,7 +26,7 @@ A Microsoft Sentinel toolkit for generating and ingesting **realistic sample dat
 |---|---|
 | `scripts/Invoke-SampleDataIngestion.ps1` | Core engine — deploys infrastructure and ingests sample data for a single table |
 | `scripts/Invoke-AttackScenarioIngestion.ps1` | Orchestrator — reads a scenario definition and ingests correlated data across multiple tables |
-| `config/workspace.json` | Workspace coordinates (tenant, subscription, resource group, workspace ID) |
+| `config/workspace.json` | Workspace identifier — typically just `workspaceName`; other coordinates are auto-resolved from `az` context |
 | `config/entities.json` | Entity pools (users, IPs, devices, domains, URLs, emails) shared across all ingestion |
 | `schemas/` | Table schema definitions (JSON) — created by the agent or manually. Pre-populated with most built-in schemas that support direct ingestion  |
 | `samples/` | Sample data files (JSON/CSV) for realistic value distributions |
@@ -74,19 +74,25 @@ copilot
 
 ### 2. Configure your workspace
 
-Rename `config/workspace.json.template` to `config/workspace.json`
-
-Then edit `config/workspace.json` with your values:
+Rename `config/workspace.json.template` to `config/workspace.json`, then specify just the workspace name (everything else is resolved from your current `az login` context):
 
 ```json
 {
-  "tenantId": "<your-tenant-id>",
-  "subscriptionId": "<your-subscription-id>",
-  "resourceGroup": "<your-resource-group>",
-  "workspaceName": "<your-workspace-name>",
-  "workspaceId": "<your-workspace-id>"
+  "workspaceName": "<your-workspace-name>"
 }
 ```
+
+Alternatively, identify the workspace by its customer ID (GUID):
+
+```json
+{
+  "workspaceId": "<workspace-customer-id-guid>"
+}
+```
+
+**Auto-resolved fields** (from `az` context): `tenantId`, `subscriptionId`, `resourceGroup`, the other identifier, `dceName`. Add any of these explicitly to override or to disambiguate when the same `workspaceName` exists in multiple subscriptions you can access.
+
+> **Requirements:** Azure CLI signed in (`az login`) against the workspace's tenant, plus the Resource Graph extension (`az extension add --name resource-graph`) for cross-subscription auto-resolution.
 
 > **Note:** `config/workspace.json` is in `.gitignore` and will never be committed.
 
@@ -99,6 +105,8 @@ Sample GitHub Copilot prompts:
 > *"Ingest sample data for `Proofpoint TAP`"*
 
 > *"Ingest this sample file into Sentinel"* (attach or reference a JSON/CSV file with log records)
+
+> **Note:** By default, generated records are spread across the **last 30 minutes** (`TimeGenerated`). You can ask for a different window in natural language, e.g. *"...spread across the last 24 hours"* or *"...over the past 2 hours"*.
 
 ### 4. Ingest an attack scenario
 
@@ -226,7 +234,7 @@ Customize the users, IPs, devices, domains, and URLs used in generated data. All
 
 ### Workspace Config (`config/workspace.json`)
 
-Workspace coordinates used by all scripts. Both ingestion scripts accept `-WorkspaceConfig` and `-EntitiesFile` parameters to override defaults.
+Workspace identifier used by all scripts. Minimum content is a single `workspaceName` (or `workspaceId` GUID); remaining coordinates are auto-resolved from your current `az login` context via Azure Resource Graph. Both ingestion scripts accept `-WorkspaceConfig` and `-EntitiesFile` parameters to override defaults.
 
 ---
 

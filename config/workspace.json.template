@@ -1,7 +1,4 @@
 {
-  "tenantId": "<your-entra-tenant-id>",
-  "subscriptionId": "<your-azure-subscription-id>",
-  "resourceGroup": "<your-resource-group-name>",
-  "workspaceName": "<your-log-analytics-workspace-name>",
-  "workspaceId": "<your-log-analytics-workspace-id>"
+  "_comment": "Minimum config: provide workspaceName OR workspaceId. Other fields are auto-resolved from the current 'az login' context. Add subscriptionId/resourceGroup if the same workspaceName exists in multiple subscriptions you have access to.",
+  "workspaceName": "<your-log-analytics-workspace-name>"
 }

@@ -15,7 +15,7 @@ This repository contains tools for generating and ingesting sample data into Mic
 
 ## Key Rules
 
-1. Always read `config/workspace.json` for workspace coordinates — never ask the user
+1. Always read `config/workspace.json` for the workspace identifier — never ask the user. The file may contain only `workspaceName` (or `workspaceId`); the scripts auto-resolve `tenantId`, `subscriptionId`, and `resourceGroup` from the current `az login` context.
 2. Always read `config/entities.json` for entity pools
 3. Schema files use the format: `{ "columns": [ { "name": "...", "type": "...", "values": [...] } ] }`
 4. Use `string` for GUID/UUID fields — `guid` type is not supported by DCR stream declarations
