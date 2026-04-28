@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-04-20",
-  "lastUpdated": "2026-04-27",
+  "lastUpdated": "2026-04-28",
   "conventions": {
     "isSentinelSolution": "true = entry is an Azure-Sentinel marketplace solution. false = entry is a native Azure/Microsoft table with no Sentinel solution; consumer should generate DCR/DCE directly from the schema.",
     "streamPrefix": "Tables ending in '_CL' use stream name 'Custom-<TableName>'; all other tables use 'Microsoft-<TableName>'.",
@@ -1003,10 +1003,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Derdack SIGNL4",
@@ -1516,10 +1514,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Halcyon Connector",
@@ -1689,10 +1685,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Keeper Security Push Connector",
@@ -1732,10 +1726,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "MailGuard 365",
@@ -1838,10 +1830,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Microsoft Defender XDR",
@@ -2064,10 +2054,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Mimecast Secure Email Gateway",
@@ -2125,10 +2113,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "MongoDB Atlas Logs",
@@ -2431,10 +2417,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Proofpoint On Demand Email Security (via Codeless Connector Platform)",
@@ -2937,10 +2921,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Threat Intelligence Platforms",
@@ -2952,10 +2934,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "Threat Intelligence Upload API (Preview)",
@@ -2967,10 +2947,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "UCClient",
@@ -3183,10 +3161,8 @@
       "officialTables": [
         "ThreatIntelligenceIndicator"
       ],
-      "hasSchema": "all",
-      "tablesInRepo": [
-        "ThreatIntelligenceIndicator"
-      ]
+      "hasSchema": "none",
+      "tablesInRepo": []
     },
     {
       "name": "VMware Carbon Black Cloud",
