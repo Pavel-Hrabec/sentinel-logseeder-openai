@@ -200,7 +200,7 @@ Source: [Logs Ingestion API — Supported Tables](https://learn.microsoft.com/az
 
 In addition to the curated scenarios above, the toolkit can automatically produce **product-agnostic attack scenarios from the [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) project**, keeping coverage current with community-maintained MITRE ATT&CK technique tests.
 
-Generated scenarios are written to [`scenarios/generated/`](scenarios/generated/) and follow the exact same format as the hand-built scenarios above, so they're consumable by `Invoke-AttackScenarioIngestion.ps1` after the usual product-selection step.
+Generated scenarios are written to [`scenarios/generated/`](scenarios/generated/) and follow the exact same format as the hand-built scenarios above, so they're consumable by the agent.
 
 ### Current Coverage 
 
