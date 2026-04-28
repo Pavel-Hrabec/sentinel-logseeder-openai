@@ -1,8 +1,11 @@
-<p align="center">
-  <img src="assets/banner.svg" alt="Sentinel LogSeeder — Sample Data & Attack Scenario Ingestion" width="640"/>
-</p>
-
 # 🧪 Sentinel LogSeeder — Sample Data & Attack Scenario Ingestion
+
+![PowerShell 7+](https://img.shields.io/badge/PowerShell-7.0%2B-blue?logo=powershell&logoColor=white)
+![Azure CLI](https://img.shields.io/badge/Azure%20CLI-2.50%2B-0078D4?logo=microsoft-azure&logoColor=white)
+![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-required-181717?logo=github&logoColor=white)
+![Microsoft Sentinel](https://img.shields.io/badge/Microsoft%20Sentinel-enabled-0078D4?logo=microsoft&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![License](https://img.shields.io/github/license/noodlemctwoodle/Sentinel-CLv1-Analyzer)
 
 A Microsoft Sentinel toolkit for generating and ingesting **realistic sample data** into Log Analytics tables via the Azure Monitor Logs Ingestion API. Supports both single-table ingestion and **multi-table attack scenarios** that simulate coordinated threat activity across correlated tables.
 
