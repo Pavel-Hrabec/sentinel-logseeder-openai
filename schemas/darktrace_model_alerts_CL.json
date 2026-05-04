@@ -1,0 +1,137 @@
+{
+  "columns": [
+    { "name": "TimeGenerated", "type": "datetime" },
+    { "name": "dtProduct_s", "type": "string", "values": ["Policy Breach", "Policy Breach", "Policy Breach", "AI Analyst", "AI Analyst", "System Alert", "Antigena Email"] },
+    { "name": "Message", "type": "string", "values": [
+      "Device breached model Compromise / Beaconing to Rare External Endpoint with a score of 89.",
+      "Anomalous SMB activity from workstation to multiple internal servers.",
+      "Unusual TLS connection to a rare external destination observed from endpoint.",
+      "AI Analyst incident: possible credential theft and lateral movement involving multiple internal devices.",
+      "AI Analyst incident: device showed beaconing followed by suspicious data upload.",
+      "Darktrace system health alert: sensor connectivity degraded.",
+      "Antigena Email held message due to suspicious link and impersonation indicators."
+    ] },
+    { "name": "Severity", "type": "string", "values": ["Low", "Medium", "High", "Critical", "Informational"] },
+    { "name": "Category", "type": "string", "values": ["Informational", "Suspicious", "Suspicious", "Critical", "Critical", "Compliance"] },
+
+    { "name": "SourceIP", "type": "string", "values": ["10.0.1.50", "10.0.1.51", "10.0.2.10", "10.0.2.20", "10.0.3.10", "172.16.0.100", "192.168.1.200", "203.0.113.42", "198.51.100.17"] },
+    { "name": "hostname_s", "type": "string", "values": ["WS-PC01", "WS-PC02", "WS-LAPTOP03", "SRV-WEB01", "SRV-DB01", "SRV-DC01", "SRV-MAIL01", "linux-build-01"] },
+    { "name": "deviceIP_s", "type": "string", "values": ["10.0.1.50", "10.0.1.51", "10.0.2.10", "10.0.2.20", "10.0.3.10", "172.16.0.100", "192.168.1.200"] },
+    { "name": "deviceId_d", "type": "real", "values": [1001, 1002, 1003, 1100, 1200, 1300, 1401, 1500] },
+    { "name": "sid_d", "type": "real", "values": [1, 2, 3, 10, 20, 30, 100, 200] },
+    { "name": "typeLabel_s", "type": "string", "values": ["desktop", "server", "domain controller", "mail server", "database server", "cloud workload", "iot device"] },
+    { "name": "bestDeviceName_s", "type": "string", "values": ["WS-PC01", "WS-PC02", "WS-LAPTOP03", "SRV-WEB01", "SRV-DB01", "SRV-DC01", "SRV-MAIL01"] },
+    { "name": "sourceMac_s", "type": "string", "values": ["00:50:56:C0:00:01", "00:50:56:C0:00:02", "00:0C:29:A1:B2:C3", "00:0C:29:D4:E5:F6", "DC:A6:32:12:34:56", "AC:DE:48:78:9A:BC"] },
+    { "name": "sourcePort_s", "type": "string", "values": ["49152", "49531", "50100", "51234", "52345", "53456", "54567", "55678"] },
+    { "name": "destIP_s", "type": "string", "values": ["10.0.1.50", "10.0.2.10", "10.0.2.20", "172.16.0.100", "8.8.8.8", "1.1.1.1", "13.107.42.14", "52.168.112.66", "104.210.38.150", "185.220.101.34", "91.234.99.42"] },
+    { "name": "destPort_s", "type": "string", "values": ["22", "53", "80", "88", "135", "389", "443", "445", "1433", "3389", "4444", "8080", "8443"] },
+    { "name": "destHost_s", "type": "string", "values": ["SRV-DC01", "SRV-DC02", "SRV-WEB01", "SRV-DB01", "SRV-MAIL01", "outlook.office365.com", "graph.microsoft.com", "malware-c2.example.com", "updates.contoso.com", ""] },
+    { "name": "destMac_s", "type": "string", "values": ["00:50:56:C0:00:01", "00:50:56:C0:00:02", "00:0C:29:A1:B2:C3", "00:0C:29:D4:E5:F6", ""] },
+
+    { "name": "score_d", "type": "real", "values": [12.5, 25.0, 42.7, 58.3, 70.0, 82.4, 89.7, 94.1, 99.0] },
+    { "name": "modelName_s", "type": "string", "values": [
+      "Compromise / Beaconing to Rare External Endpoint",
+      "Compromise / Suspicious SMB Activity",
+      "Anomalous Connection / New External Endpoint",
+      "Compliance / High Volume External Data Transfer",
+      "Device / New or Unusual Service Control",
+      "Anomalous Server Activity / Rare Internal Connection",
+      "Antigena / Network Scan",
+      "Unrestricted Test Model"
+    ] },
+    { "name": "pid_d", "type": "real", "values": [100, 101, 203, 301, 401, 500, 701, 900] },
+    { "name": "threatID_d", "type": "real", "values": [100001, 100002, 200301, 300045, 400678, 500912, 600134, 700256] },
+    { "name": "breachTime_s", "type": "datetime" },
+    { "name": "uuid_g", "type": "string", "values": ["0f4a2b2b-2fa7-4b40-9b59-9af6d8f9f001", "f0f6d7b1-4f35-42e2-8e32-9c8652c9a002", "ba5eba11-6b0e-4e6d-b738-9fdcfe9f0003", "8df2e6bd-7e35-47af-aa1d-8f572ea30004", "51c8edfd-b2d0-4d8e-b410-01b7d41f0005"] },
+    { "name": "breachUrl_s", "type": "string", "values": [
+      "https://darktrace.example.com/#modelbreach/0f4a2b2b-2fa7-4b40-9b59-9af6d8f9f001",
+      "https://darktrace.example.com/#modelbreach/f0f6d7b1-4f35-42e2-8e32-9c8652c9a002",
+      "https://darktrace.example.com/#modelbreach/ba5eba11-6b0e-4e6d-b738-9fdcfe9f0003",
+      "https://darktrace.example.com/#modelbreach/8df2e6bd-7e35-47af-aa1d-8f572ea30004"
+    ] },
+    { "name": "description_s", "type": "string", "values": [
+      "The device connected to an external endpoint it rarely contacts, consistent with command and control beaconing.",
+      "The device initiated a large number of SMB sessions to peer hosts, which may indicate lateral movement.",
+      "The device transferred an unusually high volume of data to an external destination.",
+      "The device used an unusual protocol for its peer group.",
+      "The model breach was generated by a configured Darktrace test model."
+    ] },
+    { "name": "tags_s", "type": "string", "values": ["", "C2,Beaconing", "Lateral Movement,SMB", "Exfiltration,Large Upload", "Credential Access,Kerberos", "Test Alert"] },
+    { "name": "mitreTechniques_s", "type": "string", "values": ["", "T1071", "T1071.001", "T1021.002", "T1041", "T1110", "T1550.002", "T1046"] },
+    { "name": "triggeredComponents_s", "type": "string", "values": [
+      "[{\"time\":\"2026-05-04T07:20:00Z\",\"component\":\"External endpoint rarity\",\"metric\":\"rarity\",\"value\":0.98}]",
+      "[{\"time\":\"2026-05-04T07:22:00Z\",\"component\":\"Connection frequency\",\"metric\":\"connections\",\"value\":47},{\"time\":\"2026-05-04T07:23:00Z\",\"component\":\"Data volume\",\"metric\":\"bytes\",\"value\":5242880}]",
+      "[{\"time\":\"2026-05-04T07:24:00Z\",\"component\":\"SMB lateral movement\",\"metric\":\"distinct_destinations\",\"value\":12}]",
+      "[]"
+    ] },
+    { "name": "details_s", "type": "string", "values": [
+      "{\"externalEndpoint\":\"185.220.101.34\",\"protocol\":\"TLS\",\"ja3\":\"769f541a3c8b9e15d3a1fb2d4f4e8a88\"}",
+      "{\"internalConnections\":12,\"service\":\"SMB\",\"destinationPorts\":[445,135,139]}",
+      "{\"uploadBytes\":4194304,\"downloadBytes\":65536,\"destinationCountry\":\"Netherlands\"}",
+      "{\"emailAction\":\"hold\",\"reason\":\"impersonation and suspicious link\"}",
+      "{}"
+    ] },
+    { "name": "compliance_b", "type": "boolean", "values": [false, false, false, true] },
+    { "name": "cSensor_b", "type": "boolean", "values": [true, true, false] },
+    { "name": "antigena_b", "type": "boolean", "values": [false, false, true] },
+    { "name": "longitude_d", "type": "real", "values": [-77.0369, -122.3321, -0.1278, 4.9041, 8.6821, 103.8198, 139.6917, 37.6173, 116.4074] },
+    { "name": "latitude_d", "type": "real", "values": [38.9072, 47.6062, 51.5074, 52.3676, 50.1109, 1.3521, 35.6895, 55.7558, 39.9042] },
+
+    { "name": "title_s", "type": "string", "values": [
+      "Possible credential theft and lateral movement",
+      "Suspicious beaconing followed by data upload",
+      "New external C2-like connection from workstation",
+      "Multiple anomalous connections involving privileged server",
+      "Potential ransomware precursor activity"
+    ] },
+    { "name": "startTime_s", "type": "datetime" },
+    { "name": "endTime_s", "type": "datetime" },
+    { "name": "externalId_g", "type": "string", "values": ["f2f09ef2-723a-4b27-8d36-b7b3a7aa0001", "cfe3d66a-55cb-4c34-b1f3-bb5655aa0002", "79cd8147-af90-47fb-815e-b9a2cdff0003", "e59adc04-9eb2-491d-90de-7922e26d0004"] },
+    { "name": "url_s", "type": "string", "values": [
+      "https://darktrace.example.com/#ai-analyst/incident/f2f09ef2-723a-4b27-8d36-b7b3a7aa0001",
+      "https://darktrace.example.com/#ai-analyst/incident/cfe3d66a-55cb-4c34-b1f3-bb5655aa0002",
+      "https://darktrace.example.com/#status/sensor-connectivity",
+      "https://darktrace.example.com/#email/message/DTEMAIL-0001"
+    ] },
+    { "name": "summary_s", "type": "string", "values": [
+      "Darktrace AI Analyst observed a chain of anomalous activity including rare external connections and lateral SMB activity.",
+      "A device began beaconing to a rare external endpoint and then uploaded an unusual volume of data.",
+      "Multiple devices contacted the same rare external infrastructure in a short period.",
+      "An email was held after Antigena Email identified suspicious sender behavior and a high-risk link."
+    ] },
+    { "name": "summaryFirstSentence_s", "type": "string", "values": [
+      "Darktrace AI Analyst observed a chain of anomalous activity.",
+      "A device began beaconing to a rare external endpoint.",
+      "Multiple devices contacted the same rare external infrastructure.",
+      "Antigena Email identified suspicious sender behavior."
+    ] },
+    { "name": "groupScore_d", "type": "real", "values": [15.0, 28.5, 45.2, 61.0, 75.8, 88.0, 96.5] },
+    { "name": "groupCategory_s", "type": "string", "values": ["compliance", "suspicious", "suspicious", "critical", "critical"] },
+    { "name": "identifier_s", "type": "string", "values": ["incident-10001", "incident-10002", "incident-10003", "incident-10004"] },
+    { "name": "activityId_s", "type": "string", "values": ["activity-20001", "activity-20002", "activity-20003", "activity-20004"] },
+    { "name": "groupingId_s", "type": "string", "values": ["group-30001", "group-30002", "group-30003", "group-30004"] },
+    { "name": "groupByActivity_b", "type": "boolean", "values": [true, true, false] },
+    { "name": "newEvent_b", "type": "boolean", "values": [true, true, false] },
+    { "name": "currentGroup_s", "type": "string", "values": ["Current Group: Rare external beaconing", "Current Group: Lateral movement", "Current Group: Suspicious upload", ""] },
+    { "name": "groupPreviousGroups_s", "type": "string", "values": ["[]", "[\"Rare External Endpoint\"]", "[\"Credential Activity\",\"Lateral Movement\"]", "[\"Suspicious Upload\"]"] },
+
+    { "name": "time_s", "type": "datetime" },
+    { "name": "friendlyName_s", "type": "string", "values": ["Master service status", "Sensor connectivity", "Ingestion queue delay", "Packet capture health", "Disk utilization", "Model engine status"] },
+    { "name": "priority_code_d", "type": "real", "values": [0, 1, 2, 3, 4, 5] },
+    { "name": "priority_s", "type": "string", "values": ["Info", "Low", "Medium", "High", "Critical"] },
+    { "name": "name_s", "type": "string", "values": ["sensor_connection_lost", "sensor_connection_restored", "master_disk_high", "model_engine_degraded", "ingestion_queue_delay", "test_alert"] },
+    { "name": "status_s", "type": "string", "values": ["active", "resolved", "acknowledged", "open", "closed"] },
+
+    { "name": "from_s", "type": "string", "values": ["ceo@example-partner.com", "billing@fabrikam.net", "security-alert@contoso.com", "noreply@microsoft.com", "alerts@github.com", "external.sender@example.com"] },
+    { "name": "to_s", "type": "string", "values": ["jsmith@contoso.com", "agarcia@contoso.com", "mwilson@contoso.com", "admin@contoso.com", "svc_monitor@contoso.com"] },
+    { "name": "subject_s", "type": "string", "values": ["Urgent invoice payment required", "Password reset required", "Shared document awaiting review", "Security alert: sign-in from new location", "Quarterly forecast attached", "Action required: mailbox quota"] },
+    { "name": "action_s", "type": "string", "values": ["hold", "allow", "spam", "quarantine", "link-disabled", "attachment-stripped"] },
+    { "name": "senderDomain_s", "type": "string", "values": ["example-partner.com", "fabrikam.net", "contoso.com", "microsoft.com", "github.com", "suspicious-example.com"] },
+    { "name": "recipientDomain_s", "type": "string", "values": ["contoso.com", "contoso.com", "fabrikam.net"] },
+    { "name": "emailId_s", "type": "string", "values": ["DTEMAIL-0001", "DTEMAIL-0002", "DTEMAIL-0003", "DTEMAIL-0004"] },
+    { "name": "attachmentName_s", "type": "string", "values": ["", "invoice_Q2.pdf", "payment_details.html", "forecast.xlsx", "secure_message.htm"] },
+    { "name": "link_s", "type": "string", "values": ["", "https://phishing-site.example.com/login", "https://malware-c2.example.com/payload", "https://portal.contoso.com/dashboard", "https://github.com/security"] },
+
+    { "name": "SourceSystem", "type": "string", "values": ["LogSeeder"] }
+  ]
+}

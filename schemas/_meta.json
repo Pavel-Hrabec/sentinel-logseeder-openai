@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-04-20",
-  "lastUpdated": "2026-04-28",
+  "lastUpdated": "2026-05-04",
   "conventions": {
     "isSentinelSolution": "true = entry is an Azure-Sentinel marketplace solution. false = entry is a native Azure/Microsoft table with no Sentinel solution; consumer should generate DCR/DCE directly from the schema.",
     "streamPrefix": "Tables ending in '_CL' use stream name 'Custom-<TableName>'; all other tables use 'Microsoft-<TableName>'.",
@@ -1005,8 +1005,10 @@
       "officialTables": [
         "darktrace_model_alerts_CL"
       ],
-      "hasSchema": "none",
-      "tablesInRepo": []
+      "hasSchema": "all",
+      "tablesInRepo": [
+        "darktrace_model_alerts_CL"
+      ]
     },
     {
       "name": "Datalake2Sentinel",
