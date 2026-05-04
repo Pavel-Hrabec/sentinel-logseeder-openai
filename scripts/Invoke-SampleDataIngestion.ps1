@@ -807,6 +807,70 @@ function Split-RecordsBySize {
     }
 }
 
+function Get-IngestHttpClient {
+    # PowerShell 7.6 ships on .NET 9, which prefers TLS 1.3 for outbound HTTPS.
+    # The Azure Monitor Logs Ingestion DCE endpoint has been observed to fail the
+    # TLS 1.3 handshake ("Received an unexpected EOF or 0 bytes from the transport
+    # stream"). Invoke-RestMethod -SslProtocol Tls12 does not reliably override
+    # the underlying handler in .NET 9, so we use a SocketsHttpHandler that
+    # explicitly pins SslProtocols to Tls12.
+    if (-not (Get-Variable -Scope Script -Name '__ingestHttpClient' -ErrorAction SilentlyContinue) -or -not $script:__ingestHttpClient) {
+        $handler = [System.Net.Http.SocketsHttpHandler]::new()
+        $sslOpts = [System.Net.Security.SslClientAuthenticationOptions]::new()
+        $sslOpts.EnabledSslProtocols = [System.Security.Authentication.SslProtocols]::Tls12
+        $handler.SslOptions = $sslOpts
+        $client = [System.Net.Http.HttpClient]::new($handler)
+        $client.Timeout = [TimeSpan]::FromMinutes(2)
+        $script:__ingestHttpClient = $client
+    }
+    return $script:__ingestHttpClient
+}
+
+function Invoke-IngestionPost {
+    param(
+        [string]$Uri,
+        [hashtable]$Headers,
+        [string]$Body
+    )
+    $client = Get-IngestHttpClient
+    $req = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Post, $Uri)
+    $req.Content = [System.Net.Http.StringContent]::new($Body, [System.Text.Encoding]::UTF8, "application/json")
+    foreach ($k in $Headers.Keys) {
+        if ($k -ieq 'Content-Type') { continue }
+        if ($k -ieq 'Authorization') {
+            $req.Headers.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::Parse([string]$Headers[$k])
+        } else {
+            $null = $req.Headers.TryAddWithoutValidation($k, [string]$Headers[$k])
+        }
+    }
+    try {
+        $resp = $client.SendAsync($req).GetAwaiter().GetResult()
+    } finally {
+        $req.Dispose()
+    }
+    $content = $null
+    try { $content = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult() } catch { }
+    $retryAfter = $null
+    try {
+        if ($resp.Headers.RetryAfter) {
+            if ($resp.Headers.RetryAfter.Delta -and $resp.Headers.RetryAfter.Delta.HasValue) {
+                $retryAfter = [int]$resp.Headers.RetryAfter.Delta.Value.TotalSeconds
+            } elseif ($resp.Headers.RetryAfter.Date -and $resp.Headers.RetryAfter.Date.HasValue) {
+                $retryAfter = [int]($resp.Headers.RetryAfter.Date.Value - [DateTimeOffset]::UtcNow).TotalSeconds
+            }
+        }
+    } catch { }
+    $statusCode = [int]$resp.StatusCode
+    $isSuccess = $resp.IsSuccessStatusCode
+    $resp.Dispose()
+    return [pscustomobject]@{
+        StatusCode = $statusCode
+        IsSuccess  = $isSuccess
+        Content    = $content
+        RetryAfter = $retryAfter
+    }
+}
+
 function Send-Records {
     param(
         [string]$IngestionEndpoint,
@@ -841,52 +905,50 @@ function Send-Records {
         $attempt = 0
         $maxAttempts = 4
         while ($true) {
+            $statusCode = $null
+            $responseBody = $null
+            $retryAfterSeconds = $null
+            $isTransportError = $false
+            $transportMessage = $null
+
             try {
-                $clientRequestId = [guid]::NewGuid().ToString()
-                $headers["x-ms-client-request-id"] = $clientRequestId
-                $null = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $payload
-                $totalSent += $batch.Count
-                break
+                $headers["x-ms-client-request-id"] = [guid]::NewGuid().ToString()
+                $result = Invoke-IngestionPost -Uri $uri -Headers $headers -Body $payload
+                if ($result.IsSuccess) {
+                    $totalSent += $batch.Count
+                    break
+                }
+                $statusCode = $result.StatusCode
+                $responseBody = $result.Content
+                $retryAfterSeconds = $result.RetryAfter
             } catch {
-                $exception = $_.Exception
-                $statusCode = $null
-                $responseBody = $null
-                $retryAfterSeconds = $null
-
-                if ($exception.Response) {
-                    try { $statusCode = [int]$exception.Response.StatusCode } catch { }
-                    try {
-                        $reader = New-Object System.IO.StreamReader($exception.Response.GetResponseStream())
-                        $responseBody = $reader.ReadToEnd()
-                    } catch { }
-                    try {
-                        $retryAfterHeader = $exception.Response.Headers["Retry-After"]
-                        if ($retryAfterHeader) {
-                            [int]::TryParse($retryAfterHeader, [ref]$retryAfterSeconds) | Out-Null
-                        }
-                    } catch { }
-                }
-
-                $isInvalidStream = ($responseBody -and $responseBody -match "InvalidStream") -or ($exception.Message -match "InvalidStream")
-                $isTransportError = $exception.Message -match "forcibly closed|underlying connection|transport connection|connection was closed"
-                $isRetryable = ($statusCode -in @(429, 500, 502, 503, 504)) -or $isTransportError
-
-                if (($isInvalidStream -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
-                    $attempt++
-                    $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(30, [math]::Pow(2, $attempt)) }
-                    if ($isInvalidStream) {
-                        Write-Host "InvalidStream — waiting for DCR propagation (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
-                    } else {
-                        Write-Host "Transient error (status $statusCode). Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
-                    }
-                    Start-Sleep -Seconds $delaySeconds
-                    continue
-                }
-
-                Write-Host "Ingestion failed: $($exception.Message)" -ForegroundColor Red
-                if ($responseBody) { Write-Host "Response: $responseBody" -ForegroundColor Red }
-                throw
+                $isTransportError = $true
+                $transportMessage = $_.Exception.Message
+                $inner = $_.Exception.InnerException
+                while ($inner) { $transportMessage = "$transportMessage --> $($inner.Message)"; $inner = $inner.InnerException }
             }
+
+            $isInvalidStream = ($responseBody -and $responseBody -match "InvalidStream")
+            $isRetryable = ($statusCode -in @(429, 500, 502, 503, 504)) -or $isTransportError
+
+            if (($isInvalidStream -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
+                $attempt++
+                $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(30, [math]::Pow(2, $attempt)) }
+                if ($isInvalidStream) {
+                    Write-Host "InvalidStream — waiting for DCR propagation (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+                } elseif ($isTransportError) {
+                    Write-Host "Transport error: $transportMessage. Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+                } else {
+                    Write-Host "Transient error (status $statusCode). Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+                }
+                Start-Sleep -Seconds $delaySeconds
+                continue
+            }
+
+            $msg = if ($isTransportError) { $transportMessage } else { "HTTP $statusCode" }
+            Write-Host "Ingestion failed: $msg" -ForegroundColor Red
+            if ($responseBody) { Write-Host "Response: $responseBody" -ForegroundColor Red }
+            throw "Ingestion failed: $msg"
         }
     }
 

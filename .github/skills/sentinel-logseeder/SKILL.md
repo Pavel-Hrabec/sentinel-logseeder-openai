@@ -174,6 +174,17 @@ Same as Scenario 1, but extract schema from the connector's ARM template `stream
 
 ### Product Selection (Required for All Scenarios)
 
+> **HARD REQUIREMENT — DO NOT SKIP.** Product selection is the **first interactive step** of every attack-scenario workflow. The agent **must** ask the user which product/vendor to use for each table category in the scenario **before** any deployment, ingestion, or runtime-scenario generation. This applies in **all** of the following situations — no exceptions:
+>
+> - Running an existing product-agnostic scenario template (e.g., `scenarios/ransomware-deployment.json`).
+> - Re-running a scenario when a `-runtime.json` variant already exists. **Existence of a prior runtime file is NOT consent.** Always re-confirm product choices (the user may want different products this time, or the previous selection may be stale).
+> - Creating a new scenario.
+> - One-line user requests like *"ingest the data exfiltration attack"*, *"simulate ransomware"*, *"run the credential theft scenario"*. Brevity of the request does NOT permit skipping product selection.
+>
+> The **only** time product selection may be skipped is if the user has **explicitly** stated their product choices in the same conversation (e.g., *"use ASIM tables"*, *"use Okta and Windows Security Events"*, *"use defaults"*). Inferring intent from a previously-generated runtime file is not allowed.
+>
+> If you are about to call `Invoke-AttackScenarioIngestion.ps1` without having confirmed product selection in the current conversation, **stop and ask first**.
+
 Before running or creating any attack scenario, the agent **must always ask the user which product/vendor to use for each table category** in the scenario. Different products have different table names, schemas, and field formats.
 
 #### Steps
@@ -291,10 +302,12 @@ At runtime, the agent must:
 
 ### When the user asks to run an attack scenario
 
+> **Pre-flight gate:** Before performing any of the steps below, confirm that **product selection** has been completed in the current conversation (see the *Product Selection* section above). If not, **ask the user first** and wait for their response before continuing. The presence of an existing `*-runtime.json` file does NOT bypass this gate.
+
 1. **List available scenarios** from the `scenarios/` directory
 2. **Show scenario details** — name, description, tables involved, MITRE tactics, timeline phases
-3. **Ask for product selection** — for each table category in the scenario, ask the user which product/vendor to use (see Product Catalog above)
-4. **Generate runtime scenario** — create a product-specific scenario file with resolved table names, schemas, and product metadata
+3. **Ask for product selection** — for each table category in the scenario, ask the user which product/vendor to use (see Product Catalog above). **This step is mandatory and cannot be skipped, even if a runtime scenario file already exists.**
+4. **Generate runtime scenario** — create a product-specific scenario file with resolved table names, schemas, and product metadata (overwrite any stale `-runtime.json` if product choices differ)
 5. **Check schema files exist** — each table in the runtime scenario needs a schema file in `schemas/`
 6. **Create missing schemas** — if any schema files are missing, follow the single-table workflow to create them, using the selected product's native format
 7. **Present plan to user for confirmation**
@@ -308,6 +321,14 @@ At runtime, the agent must:
 10. **Verify** — query each table for recent data
 
 ### Post-Ingestion Summary (Mandatory for All Attack Scenarios)
+
+> **HARD REQUIREMENT — DO NOT SKIP.** Producing this summary is the **final step of the attack-scenario workflow** and is **not optional**. The user's reply to a successful ingestion is **incomplete** without it. Before sending your final message after running `Invoke-AttackScenarioIngestion.ps1`, you **must** verify you have included:
+>
+> - The scenario base `TimeGenerated` (UTC) line, AND
+> - The full per-phase summary table (one row per timeline phase), AND
+> - The verification KQL queries.
+>
+> If any of these are missing, your reply is non-compliant — go back and add them before responding. This applies even if the user's request was a short one-liner like "ingest scenario X" or "simulate Y attack". The summary is required regardless of how the ingestion was triggered (running an existing scenario, creating a new one, re-running, etc.).
 
 After every successful attack scenario ingestion (and after creating a new scenario that was ingested), the agent **must** present a summary to the user with:
 
@@ -323,6 +344,17 @@ After every successful attack scenario ingestion (and after creating a new scena
 | **Count** | Number of records ingested for that phase |
 
 One row per timeline phase. If a single table is used across multiple phases, list each phase as a separate row. Include a final note with the verification KQL queries.
+
+#### Self-check Before Replying
+
+Immediately before sending your post-ingestion message, run through this checklist mentally:
+
+- [ ] Did I capture the `Scenario base TimeGenerated (UTC):` value from the script's stdout?
+- [ ] Did I include a markdown table with one row per phase from the runtime scenario file?
+- [ ] Did I include any background-noise rows reported by the script (`Adding N background noise records for '<table>'`)?
+- [ ] Did I append the verification KQL queries from the script's `Verify with:` output?
+
+If any answer is "no", do not send the message — fix it first.
 
 ### When the user asks to create a new attack scenario
 
