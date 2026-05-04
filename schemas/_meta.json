@@ -303,11 +303,11 @@
       "contentId": "azure-sentinel-solution-awseks",
       "version": "2.0.0",
       "officialTables": [
-        "AWSEKS"
+        "AWSEKSLogs_CL"
       ],
       "hasSchema": "all",
       "tablesInRepo": [
-        "AWSEKS"
+        "AWSEKSLogs_CL"
       ]
     },
     {

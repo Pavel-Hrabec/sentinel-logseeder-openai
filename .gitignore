@@ -36,3 +36,4 @@ scenarios/*runtime.json
 
 # Cached intel sources (Atomic Red Team clone, etc.)
 .state/
+config/workspace buildninja.json
