@@ -206,6 +206,21 @@
       ]
     },
     {
+      "name": "ThreatIntelIndicators",
+      "isSentinelSolution": false,
+      "solutionFolder": null,
+      "packageId": null,
+      "contentId": null,
+      "version": null,
+      "officialTables": [
+        "ThreatIntelIndicators"
+      ],
+      "hasSchema": "all",
+      "tablesInRepo": [
+        "ThreatIntelIndicators"
+      ]
+    },
+    {
       "name": "Apache HTTP Server",
       "isSentinelSolution": true,
       "solutionFolder": "Solutions/ApacheHTTPServer",
