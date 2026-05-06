@@ -31,6 +31,7 @@ A Microsoft Sentinel toolkit for generating and ingesting **realistic sample dat
 - **Azure CLI** (`az`) installed and authenticated (`az login`)
   - The **log-analytics** extension is required: `az extension add --name log-analytics`
 - **PowerShell 7+** recommended
+  - The execution policy needs to be set to Bypass, make sure you restore your value after ingesting: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass`.
 - A **Log Analytics workspace** with Microsoft Sentinel enabled
 - **Azure RBAC permissions** on the target resource group:
   - **Log Analytics Contributor** — to create Data Collection Endpoints (DCE), Data Collection Rules (DCR), and custom tables
