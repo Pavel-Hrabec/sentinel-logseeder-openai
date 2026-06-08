@@ -70,7 +70,7 @@
     { "name": "TargetProcessStatusCode", "type": "string", "values": ["", "0", "1", "-1", "255"] },
     { "name": "HashType", "type": "string", "values": ["SHA256", "MD5", "SHA1", "IMPHASH"] },
     { "name": "ThreatId", "type": "string", "values": ["", "", "", "threat-proc-001", "threat-proc-002"] },
-    { "name": "ThreatName", "type": "string", "values": ["", "", "", "Cobalt Strike Beacon", "Mimikatz", "EICAR Test File", "PowerShell Empire"] },
+    { "name": "ThreatName", "type": "string", "values": ["", "", "", "Cobalt Strike Beacon", "CredDumpSim", "EICAR Test File", "PowerShell Empire"] },
     { "name": "ThreatCategory", "type": "string", "values": ["", "", "", "Trojan", "HackTool", "Backdoor", "Ransomware"] },
     { "name": "ThreatRiskLevel", "type": "int", "values": [0, 0, 0, 50, 75, 90, 100] },
     { "name": "ThreatConfidence", "type": "int", "values": [0, 0, 0, 40, 70, 85, 95] },

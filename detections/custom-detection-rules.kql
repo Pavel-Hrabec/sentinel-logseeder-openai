@@ -199,8 +199,9 @@ ASimProcessEventLogs
 // =============================================================================
 // Detection name   : LSASS Credential Dumping Indicators
 // Description      : Tools and command-lines used to dump credentials from
-//                    LSASS memory — mimikatz, procdump, comsvcs.dll MiniDump,
-//                    taskmgr /create-dump, rundll32 against comsvcs.
+//                    LSASS memory — synthetic credential dumpers, procdump,
+//                    comsvcs.dll MiniDump, taskmgr /create-dump, rundll32
+//                    against comsvcs.
 // Frequency        : every 10 minutes
 // Lookback         : 1 hour
 // Severity         : High
@@ -223,9 +224,9 @@ ASimProcessEventLogs
 | where EventType == "ProcessCreated"
 | where (TargetProcessCommandLine has "lsass"
             and TargetProcessCommandLine has_any ("MiniDump", "-ma", "dump", "/create-dump"))
-     or TargetProcessCommandLine has "sekurlsa::logonpasswords"
-     or TargetProcessCommandLine has "privilege::debug"
-     or TargetProcessName has_any ("mimikatz.exe", "procdump.exe", "procdump64.exe")
+     or TargetProcessCommandLine has "simdump::logoncreds"
+     or TargetProcessCommandLine has "simpriv::debug"
+     or TargetProcessName has_any ("creddumpsim.exe", "procdump.exe", "procdump64.exe")
      or (TargetProcessName =~ "rundll32.exe"
             and TargetProcessCommandLine has "comsvcs.dll"
             and TargetProcessCommandLine has "MiniDump")

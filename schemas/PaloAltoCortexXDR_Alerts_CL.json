@@ -101,10 +101,10 @@
     { "name": "EventType", "type": "string", "values": ["Process Execution", "Network Connection", "File Modification", "Registry Modification", "DNS Query", "Injection", "Load Image"] },
     { "name": "ActionFileMacroSha256", "type": "string", "values": ["", ""] },
     { "name": "ActionFileMd5", "type": "string" },
-    { "name": "ActionFileName", "type": "string", "values": ["payload.exe", "mimikatz.exe", "ransomware.dll", "update.exe", "script.ps1", "backdoor.py", ""] },
+    { "name": "ActionFileName", "type": "string", "values": ["payload.exe", "creddumpsim.exe", "ransomware.dll", "update.exe", "script.ps1", "backdoor.py", ""] },
     { "name": "ActionFilePath", "type": "string", "values": [
       "C:\\Windows\\Temp\\payload.exe",
-      "C:\\Users\\admin\\Downloads\\mimikatz.exe",
+      "C:\\Users\\admin\\Downloads\\creddumpsim.exe",
       "C:\\Users\\jsmith\\AppData\\Local\\Temp\\ransomware.dll",
       "/tmp/backdoor.py", ""
     ] },
@@ -162,7 +162,7 @@
     { "name": "ActionRegistryValueName", "type": "string", "values": ["MalwarePayload", "Start", "DisableNotificationCenter", ""] },
     { "name": "ActionExternalHostname", "type": "string", "values": ["malware-c2.example.com", "phishing-site.example.net", "", ""] },
     { "name": "ActionProcessImageCommandLine", "type": "string", "values": ["", ""] },
-    { "name": "ActionProcessImageName", "type": "string", "values": ["payload.exe", "mimikatz.exe", "ransomware.dll", ""] },
+    { "name": "ActionProcessImageName", "type": "string", "values": ["payload.exe", "creddumpsim.exe", "ransomware.dll", ""] },
     { "name": "ActionProcessImageSha256", "type": "string" },
     { "name": "ActionProcessInstanceId", "type": "string" },
     { "name": "ActionProcessCausalityId", "type": "string" },

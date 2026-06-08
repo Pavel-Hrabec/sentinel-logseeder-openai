@@ -56,13 +56,13 @@
     { "name": "ComputerName", "type": "string", "values": ["WS-PC01", "SRV-DC01", "SRV-WEB01", "LNX-APP01"] },
     { "name": "UserName", "type": "string", "values": ["jsmith", "agarcia", "mwilson", "lchen", "pjones", "admin"] },
     { "name": "FileName", "type": "string", "values": [
-      "powershell.exe", "cmd.exe", "rundll32.exe", "mimikatz.exe",
+      "powershell.exe", "cmd.exe", "rundll32.exe", "creddumpsim.exe",
       "certutil.exe", "mshta.exe", "wscript.exe", "regsvr32.exe"
     ] },
     { "name": "FilePath", "type": "string", "values": [
       "\\Device\\HarddiskVolume3\\Windows\\System32\\powershell.exe",
       "\\Device\\HarddiskVolume3\\Windows\\System32\\cmd.exe",
-      "\\Device\\HarddiskVolume3\\Users\\jsmith\\Downloads\\mimikatz.exe",
+      "\\Device\\HarddiskVolume3\\Users\\jsmith\\Downloads\\creddumpsim.exe",
       "\\Device\\HarddiskVolume3\\Windows\\Temp\\payload.exe"
     ] },
     { "name": "CommandLine", "type": "string", "values": [

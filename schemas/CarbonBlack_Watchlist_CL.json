@@ -27,7 +27,7 @@
     { "name": "ParentUsername", "type": "string" },
     { "name": "ParentGuid", "type": "string" },
     { "name": "IocId", "type": "string" },
-    { "name": "IocHit", "type": "string", "values": ["process_name:mimikatz.exe", "sha256:275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "cmdline:encodedcommand", ""] },
+    { "name": "IocHit", "type": "string", "values": ["process_name:creddumpsim.exe", "sha256:275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "cmdline:encodedcommand", ""] },
     { "name": "ReportId", "type": "string" },
     { "name": "ReportName", "type": "string", "values": ["Suspicious PowerShell Activity", "Known Credential Theft Tools", "LOLBin Abuse", "Fileless Attack Indicators"] },
     { "name": "ReportTags", "type": "string", "values": ["[\"attack\",\"execution\"]", "[\"credential_access\"]", "[\"defense_evasion\",\"lolbin\"]", "[]"] },

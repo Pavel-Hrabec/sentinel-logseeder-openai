@@ -44,11 +44,11 @@
       "6367c48dd193d56ea7b0baad25b19455e529f5ee",
       "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
     ] },
-    { "name": "FileDisplayName", "type": "string", "values": ["payload.exe", "mimikatz.exe", "ransomware.dll", "cryptominer.bin", "trojan_dropper.scr", "invoice_macro.docm", "backdoor.py"] },
+    { "name": "FileDisplayName", "type": "string", "values": ["payload.exe", "creddumpsim.exe", "ransomware.dll", "cryptominer.bin", "trojan_dropper.scr", "invoice_macro.docm", "backdoor.py"] },
     { "name": "FileExtensionType", "type": "string", "values": ["Executable", "Executable", "Document", "Script", "Archive", "Unknown"] },
     { "name": "FilePath", "type": "string", "values": [
       "\\Device\\HarddiskVolume3\\Windows\\Temp\\payload.exe",
-      "\\Device\\HarddiskVolume3\\Users\\admin\\Downloads\\mimikatz.exe",
+      "\\Device\\HarddiskVolume3\\Users\\admin\\Downloads\\creddumpsim.exe",
       "\\Device\\HarddiskVolume3\\Users\\jsmith\\AppData\\Local\\Temp\\ransomware.dll",
       "/tmp/cryptominer.bin",
       "\\Device\\HarddiskVolume3\\Users\\mwilson\\Desktop\\invoice.docm",
@@ -86,7 +86,7 @@
       "{\"kill\":{\"status\":\"not_reported\"},\"quarantine\":{\"status\":\"not_reported\"}}"
     ] },
     { "name": "MitigationStatus", "type": "string", "values": ["mitigated", "mitigated", "not_mitigated", "active", "marked_as_benign", "mitigated"] },
-    { "name": "ProcessArguments", "type": "string", "values": ["-EncodedCommand SQBFAFgA...", "/c whoami /priv", "privilege::debug sekurlsa::logonpasswords", "--connect 198.51.100.17:4444", ""] },
+    { "name": "ProcessArguments", "type": "string", "values": ["-EncodedCommand SQBFAFgA...", "/c whoami /priv", "simpriv::debug simdump::logoncreds", "--connect 198.51.100.17:4444", ""] },
     { "name": "SiteId", "type": "string" },
     { "name": "SiteName", "type": "string", "values": ["Default Site", "Production", "Development", "Staging"] },
     { "name": "ThreatInfo", "type": "dynamic", "values": [
@@ -94,7 +94,7 @@
       {"analystVerdict": "undefined", "classification": "Ransomware", "classificationSource": "Cloud", "cloudVerdict": "black", "confidenceLevel": "malicious", "detectionEngines": [{"key": "pre_execution", "title": "Pre Execution"}], "engines": ["pre_execution"], "fileExtensionType": "Executable", "filePath": "\\Device\\HarddiskVolume3\\Users\\mwilson\\AppData\\Temp\\encrypt.exe", "fileVerificationType": "Unsigned", "incidentStatus": "unresolved", "initiatedBy": "cloud_detection", "isFileless": false, "mitigationStatus": "not_mitigated", "processUser": "contoso\\mwilson", "sha1": "3395856ce81f2b7382dee72602f798b642f14140", "threatId": "THR-10002", "threatName": "encrypt.exe"},
       {"analystVerdict": "false_positive", "classification": "PUP", "classificationSource": "Static", "cloudVerdict": "gray", "confidenceLevel": "suspicious", "incidentStatus": "resolved", "initiatedBy": "full_disk_scan", "mitigationStatus": "marked_as_benign", "threatId": "THR-10003", "threatName": "toolbar_installer.exe"}
     ] },
-    { "name": "ThreatName", "type": "string", "values": ["payload.exe", "mimikatz.exe", "ransomware.dll", "cryptominer.bin", "trojan_dropper.scr", "backdoor.py", "invoice_macro.docm", "encrypt.exe"] },
+    { "name": "ThreatName", "type": "string", "values": ["payload.exe", "creddumpsim.exe", "ransomware.dll", "cryptominer.bin", "trojan_dropper.scr", "backdoor.py", "invoice_macro.docm", "encrypt.exe"] },
     { "name": "UpdatedAt", "type": "datetime" },
     { "name": "Username", "type": "string" },
     { "name": "WhiteningOptions", "type": "string", "values": ["[\"hash\",\"path\",\"certificate\",\"browser\"]", "[\"hash\",\"path\"]", "[\"hash\"]", "[]"] }

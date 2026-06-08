@@ -16,7 +16,7 @@
     ] },
     { "name": "Description", "type": "string", "values": [
       "Ransomware activity was detected encrypting files across the endpoint.",
-      "Mimikatz was used to dump credentials from LSASS on domain controller.",
+      "A synthetic credential dumper was used to access LSASS on a domain controller.",
       "Lateral movement using PsExec and stolen domain admin credentials.",
       "Multi-stage PowerShell attack chain downloading and executing payloads.",
       "User received phishing email with macro-enabled document payload.",

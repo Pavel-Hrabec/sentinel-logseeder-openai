@@ -5,7 +5,7 @@
     { "name": "ObjectType", "type": "string", "values": ["indicator", "attack-pattern", "threat-actor", "malware", "tool", "campaign", "intrusion-set", "vulnerability", "identity", "relationship"] },
     { "name": "ObjectVersion", "type": "string", "values": ["1", "2", "3"] },
     { "name": "StixObjectId", "type": "string" },
-    { "name": "Name", "type": "string", "values": ["Cobalt Strike Beacon", "APT28", "Emotet", "Mimikatz", "Ryuk Ransomware", "Phishing Campaign Q1 2024", "FIN7 Intrusion Set", "CVE-2024-1234", "Contoso Corp"] },
+    { "name": "Name", "type": "string", "values": ["Cobalt Strike Beacon", "APT28", "Emotet", "CredDumpSim", "Ryuk Ransomware", "Phishing Campaign Q1 2024", "FIN7 Intrusion Set", "CVE-2024-1234", "Contoso Corp"] },
     { "name": "Description", "type": "string", "values": ["Commercial penetration testing tool frequently abused by threat actors", "Russian state-sponsored threat actor group", "Modular banking trojan turned botnet", "Credential dumping tool", "Ransomware variant targeting enterprise organizations", "Phishing campaign targeting financial sector employees", "Financially motivated threat group", "Remote code execution vulnerability", "Target organization identity"] },
     { "name": "ConfidenceLevel", "type": "int", "values": [25, 50, 75, 85, 90, 95, 100] },
     { "name": "Created", "type": "datetime" },

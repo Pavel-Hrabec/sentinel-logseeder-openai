@@ -171,7 +171,7 @@ function Build-CredentialDumpPhases {
                 EventResult              = 'Success'
                 EventSeverity            = 'High'
                 ActingProcessName        = @('powershell.exe', 'cmd.exe')
-                TargetProcessName        = @('mimikatz.exe', 'procdump.exe', 'rundll32.exe', 'lsass.exe', 'reg.exe', 'ntdsutil.exe')
+                TargetProcessName        = @('creddumpsim.exe', 'procdump.exe', 'rundll32.exe', 'lsass.exe', 'reg.exe', 'ntdsutil.exe')
                 TargetProcessCommandLine = $cmds
                 ActorUsername            = '{{victim.username}}'
                 DvcHostname              = '{{victim.device}}'
