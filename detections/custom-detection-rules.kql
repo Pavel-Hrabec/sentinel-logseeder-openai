@@ -568,6 +568,7 @@ let SuspiciousExec =
     | where CommandLine has_any (
                 "-ep bypass", "-executionpolicy bypass", "-enc", " -e ",
                 "downloadstring", "invoke-webrequest", "iex",
+                "get-simremote", "invoke-simeval",
                 "frombase64string", "hidden", "payload", "bypass")
     | project ExecTime = TimeGenerated, ExecUser = AccountName, Computer,
               NewProcessName, CommandLine, ParentProcessName;

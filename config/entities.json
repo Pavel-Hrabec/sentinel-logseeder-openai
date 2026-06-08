@@ -173,7 +173,7 @@
   ],
   "fileHashes": [
     { "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "md5": "d41d8cd98f00b204e9800998ecf8427e", "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "fileName": "empty_file.txt" },
-    { "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "md5": "44d88612fea8a8f36de82e1278abb02f", "sha1": "3395856ce81f2b7382dee72602f798b642f14140", "fileName": "eicar_test.com" },
+    { "sha256": "e1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1ca", "md5": "e1cae1cae1cae1cae1cae1cae1cae1ca", "sha1": "e1cae1cae1cae1cae1cae1cae1cae1cae1cae1ca", "fileName": "eicar_sim.txt" },
     { "sha256": "7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730", "md5": "8350e5a3e24c153df2275c9f80692773", "sha1": "2ef7bde608ce5404e97d5f042f95f89f1c232871", "fileName": "document.pdf" },
     { "sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e", "md5": "e99a18c428cb38d5f260853678922e03", "sha1": "6367c48dd193d56ea7b0baad25b19455e529f5ee", "fileName": "update.exe" },
     { "sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", "md5": "acbd18db4cc2f85cedef654fccc4a4d8", "sha1": "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", "fileName": "script.ps1" },

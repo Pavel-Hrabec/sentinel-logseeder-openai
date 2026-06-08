@@ -50,7 +50,7 @@
     { "name": "RequestURL", "type": "string", "values": ["https://outlook.office365.com/", "https://www.microsoft.com/en-us/", "https://update.fortinet.com/", "http://malware.example.com/download/payload.exe", "https://login.microsoftonline.com/", ""] },
     { "name": "RequestClientApplication", "type": "string", "values": ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Microsoft Edge/124.0.0.0", "FortiGate/7.4.4", ""] },
     { "name": "FileName", "type": "string", "values": ["invoice.exe", "report.pdf", "payload.dll", "update.zip", ""] },
-    { "name": "FileHash", "type": "string", "values": ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "44d88612fea8a8f36de82e1278abb02f", ""] },
+    { "name": "FileHash", "type": "string", "values": ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "e1cae1cae1cae1cae1cae1cae1cae1ca", ""] },
     { "name": "ThreatCategory", "type": "string", "values": ["Malware", "Phishing", "Botnet", "Exploit", "Suspicious", ""] },
     { "name": "ThreatName", "type": "string", "values": ["W32/Agent.XYZ!tr", "MS.SMB.Server.Trans.Peeking.Information.Disclosure", "HTTP.Unauthorized.Brute.Force", "Cobalt.Strike.Beacon", ""] },
     { "name": "ThreatConfidence", "type": "string", "values": ["high", "medium", "low", ""] },

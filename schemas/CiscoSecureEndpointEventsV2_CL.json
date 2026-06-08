@@ -24,7 +24,7 @@
     { "name": "FileIdentityMd5", "type": "string" },
     { "name": "FileParentFileName", "type": "string", "values": ["explorer.exe", "cmd.exe", "powershell.exe", "svchost.exe", "bash", ""] },
     { "name": "FileParentProcessId", "type": "real", "values": [3456, 892, 7890, 1234, 0] },
-    { "name": "CommandLineArguments", "type": "string", "values": ["", "-EncodedCommand SQBFAFgA...", "/c whoami", "simpriv::debug", ""] },
+    { "name": "CommandLineArguments", "type": "string", "values": ["", "-EncodedCommand RABFAE0ATwA...", "/c whoami", "simpriv::debug", ""] },
     { "name": "Hostname", "type": "string" },
     { "name": "GroupGuids", "type": "string" },
     { "name": "Tactics", "type": "string", "values": ["[\"TA0002 - Execution\"]", "[\"TA0006 - Credential Access\"]", "[\"TA0040 - Impact\"]", "[]", ""] },
