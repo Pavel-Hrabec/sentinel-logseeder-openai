@@ -780,21 +780,67 @@ function Invoke-SingleTableWorkflow {
 }
 
 function Test-OpenAIConfigured {
-    return -not [string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)
+    if (-not [string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) { return $true }
+    if (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_ENDPOINT) -and
+        -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_DEPLOYMENT) -and
+        (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_API_KEY) -or -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_AUTH_TOKEN))) {
+        return $true
+    }
+    return $false
 }
 
-function Get-OpenAIBaseUrl {
-    if (-not [string]::IsNullOrWhiteSpace($env:OPENAI_BASE_URL)) {
-        return $env:OPENAI_BASE_URL.TrimEnd("/")
+function Test-AzureOpenAIConfigured {
+    return (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_ENDPOINT) -and
+        -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_DEPLOYMENT) -and
+        (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_API_KEY) -or -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_AUTH_TOKEN)))
+}
+
+function Get-OpenAIEndpoint {
+    if (Test-AzureOpenAIConfigured) {
+        $base = $env:AZURE_OPENAI_ENDPOINT.TrimEnd("/")
+        if ($base -notmatch '/openai/v1$') {
+            $base = "$base/openai/v1"
+        }
+        return "$base/responses"
     }
-    return "https://api.openai.com/v1"
+
+    if (-not [string]::IsNullOrWhiteSpace($env:OPENAI_BASE_URL)) {
+        return ($env:OPENAI_BASE_URL.TrimEnd("/") + "/responses")
+    }
+    return "https://api.openai.com/v1/responses"
 }
 
 function Get-OpenAIModel {
+    if (Test-AzureOpenAIConfigured) {
+        return $env:AZURE_OPENAI_DEPLOYMENT
+    }
     if (-not [string]::IsNullOrWhiteSpace($env:LOGSEEDER_OPENAI_MODEL)) {
         return $env:LOGSEEDER_OPENAI_MODEL
     }
     return "gpt-4.1-mini"
+}
+
+function Get-OpenAIProviderName {
+    if (Test-AzureOpenAIConfigured) { return "Azure OpenAI" }
+    return "OpenAI"
+}
+
+function Get-OpenAIHeaders {
+    $headers = @{
+        "Content-Type" = "application/json"
+    }
+
+    if (Test-AzureOpenAIConfigured) {
+        if (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_API_KEY)) {
+            $headers["api-key"] = $env:AZURE_OPENAI_API_KEY
+        } else {
+            $headers["Authorization"] = "Bearer $env:AZURE_OPENAI_AUTH_TOKEN"
+        }
+        return $headers
+    }
+
+    $headers["Authorization"] = "Bearer $env:OPENAI_API_KEY"
+    return $headers
 }
 
 function Get-ResponseOutputText {
@@ -830,7 +876,7 @@ function Invoke-OpenAIJson {
         throw "OPENAI_API_KEY is not set. Set it before using AI generation."
     }
 
-    $endpoint = (Get-OpenAIBaseUrl) + "/responses"
+    $endpoint = Get-OpenAIEndpoint
     $body = @{
         model = Get-OpenAIModel
         instructions = $Instructions
@@ -855,10 +901,7 @@ function Invoke-OpenAIJson {
         }
     } | ConvertTo-Json -Depth 100
 
-    $headers = @{
-        Authorization = "Bearer $env:OPENAI_API_KEY"
-        "Content-Type" = "application/json"
-    }
+    $headers = Get-OpenAIHeaders
 
     $response = Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers -Body $body
     $text = Get-ResponseOutputText -Response $response
@@ -955,9 +998,13 @@ function Invoke-CustomGenerationWorkflow {
 
     if (-not (Test-OpenAIConfigured)) {
         Write-Host ""
-        Write-Host "OpenAI is not configured." -ForegroundColor Yellow
+        Write-Host "AI generation is not configured." -ForegroundColor Yellow
         Write-Host "Set OPENAI_API_KEY before using custom AI generation:" -ForegroundColor Gray
         Write-Host '  $env:OPENAI_API_KEY = "sk-..."' -ForegroundColor DarkCyan
+        Write-Host "Or for Azure OpenAI / Foundry:" -ForegroundColor Gray
+        Write-Host '  $env:AZURE_OPENAI_ENDPOINT = "https://<resource>.openai.azure.com/"' -ForegroundColor DarkCyan
+        Write-Host '  $env:AZURE_OPENAI_API_KEY = "<key>"' -ForegroundColor DarkCyan
+        Write-Host '  $env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"' -ForegroundColor DarkCyan
         return
     }
 
@@ -984,7 +1031,7 @@ objects or arrays represented as a string.
 "@
 
     Write-Host ""
-    Write-Host "Calling OpenAI model $(Get-OpenAIModel)..." -ForegroundColor Cyan
+    Write-Host "Calling $(Get-OpenAIProviderName) model/deployment $(Get-OpenAIModel)..." -ForegroundColor Cyan
     $generated = Invoke-OpenAIJson -Instructions (Get-LogSeederInstructions) -InputText $input -SchemaName "logseeder_schema" -JsonSchema (Get-SchemaGenerationContract)
 
     $schema = Convert-GeneratedSchema -Generated $generated
@@ -1174,9 +1221,9 @@ function Start-LogSeederMenu {
         Write-Host "Sentinel LogSeeder OpenAI Mode" -ForegroundColor Cyan
         Write-Host "Workspace config: $WorkspaceConfig" -ForegroundColor DarkGray
         if (Test-OpenAIConfigured) {
-            Write-Host ("OpenAI: configured, model " + (Get-OpenAIModel)) -ForegroundColor DarkGray
-        } else {
-            Write-Host "OpenAI: not configured. Prebuilt and known-table modes still work." -ForegroundColor DarkGray
+        Write-Host ("AI: configured via {0}, model/deployment {1}" -f (Get-OpenAIProviderName), (Get-OpenAIModel)) -ForegroundColor DarkGray
+    } else {
+        Write-Host "AI: not configured. Prebuilt and known-table modes still work." -ForegroundColor DarkGray
         }
         if ($PreviewOnly) {
             Write-Host "Preview mode is ON." -ForegroundColor Yellow
@@ -1185,10 +1232,10 @@ function Start-LogSeederMenu {
         $items = @(
             [pscustomobject]@{ Label = "Run prebuilt attack scenario"; Description = "Pick scenario 1, 2, 3, etc. Uses ASIM defaults or manual mapping."; Value = "scenario" },
             [pscustomobject]@{ Label = "Ingest sample data into a table"; Description = "Use an existing schema from schemas/ with a low row count."; Value = "single" },
-            [pscustomobject]@{ Label = "Generate product/vendor logs with OpenAI"; Description = "Uses OPENAI_API_KEY to create a schema, then optionally ingests."; Value = "custom" },
+            [pscustomobject]@{ Label = "Generate product/vendor logs with AI"; Description = "Uses OpenAI or Azure OpenAI to create a schema, then optionally ingests."; Value = "custom" },
             [pscustomobject]@{ Label = "Ingest JSON/CSV sample file"; Description = "Infer schema from a file and reuse the upstream ingestion engine."; Value = "file" },
             [pscustomobject]@{ Label = "Configure/test workspace"; Description = "Create or inspect config/workspace.json."; Value = "setup" },
-            [pscustomobject]@{ Label = "Other / describe what you want"; Description = "Uses OpenAI to recommend the next safe menu path."; Value = "other" }
+            [pscustomobject]@{ Label = "Other / describe what you want"; Description = "Uses AI to recommend the next safe menu path."; Value = "other" }
         )
 
         $choice = Read-MenuChoice -Title "Main Menu" -Items $items

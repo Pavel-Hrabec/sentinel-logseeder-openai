@@ -5,7 +5,8 @@ Beginner setup for Sentinel LogSeeder OpenAI mode.
 .DESCRIPTION
 Creates config/workspace.json if needed, checks common prerequisites, and then
 starts the interactive launcher. This script does not install software or write
-secrets. Set OPENAI_API_KEY in your shell if you want custom AI generation.
+secrets. Set OPENAI_API_KEY or AZURE_OPENAI_* variables in your shell if you
+want custom AI generation.
 #>
 [CmdletBinding()]
 param(
@@ -90,11 +91,16 @@ if (-not (Test-Path $workspaceConfig)) {
     Write-Host "Workspace config exists: $workspaceConfig" -ForegroundColor Green
 }
 
-if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
-    Write-Host "OPENAI_API_KEY is not set. Prebuilt scenarios still work; custom AI generation will be disabled." -ForegroundColor Yellow
-} else {
+if (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_ENDPOINT) -and
+    -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_DEPLOYMENT) -and
+    (-not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_API_KEY) -or -not [string]::IsNullOrWhiteSpace($env:AZURE_OPENAI_AUTH_TOKEN))) {
+    Write-Host "Azure OpenAI configuration detected. Deployment: $env:AZURE_OPENAI_DEPLOYMENT" -ForegroundColor Green
+} elseif (-not [string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
     $model = if ([string]::IsNullOrWhiteSpace($env:LOGSEEDER_OPENAI_MODEL)) { "gpt-4.1-mini" } else { $env:LOGSEEDER_OPENAI_MODEL }
     Write-Host "OpenAI key detected. Model: $model" -ForegroundColor Green
+} else {
+    Write-Host "No OpenAI/Azure OpenAI key is set. Prebuilt scenarios still work; custom AI generation will be disabled." -ForegroundColor Yellow
+    Write-Host "For OpenAI, set OPENAI_API_KEY. For Azure OpenAI, set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT, and AZURE_OPENAI_API_KEY or AZURE_OPENAI_AUTH_TOKEN." -ForegroundColor Yellow
 }
 
 Write-Host ""

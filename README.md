@@ -26,6 +26,15 @@ $env:LOGSEEDER_OPENAI_MODEL = "gpt-4.1-mini"
 .\scripts\Start-LogSeederOpenAI.ps1
 ```
 
+Or use Azure OpenAI / Foundry:
+
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://<resource-name>.openai.azure.com/"
+$env:AZURE_OPENAI_API_KEY = "<key>"
+$env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"
+.\scripts\Start-LogSeederOpenAI.ps1
+```
+
 OpenAI is not required for prebuilt scenarios, known-table sample ingestion, or
 JSON/CSV sample-file ingestion. It is only used when you choose a custom AI path.
 

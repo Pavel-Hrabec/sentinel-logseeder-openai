@@ -21,7 +21,7 @@ az login
 .\setup.ps1 -StartMenu
 ```
 
-For custom AI generation:
+For custom AI generation with OpenAI:
 
 ```powershell
 $env:OPENAI_API_KEY = "sk-..."
@@ -29,8 +29,27 @@ $env:LOGSEEDER_OPENAI_MODEL = "gpt-4.1-mini"
 .\scripts\Start-LogSeederOpenAI.ps1
 ```
 
-The model can be changed with `LOGSEEDER_OPENAI_MODEL`. The base URL defaults
-to `https://api.openai.com/v1` and can be changed with `OPENAI_BASE_URL`.
+For custom AI generation with Azure OpenAI / Foundry:
+
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://<resource-name>.openai.azure.com/"
+$env:AZURE_OPENAI_API_KEY = "<key>"
+$env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"
+.\scripts\Start-LogSeederOpenAI.ps1
+```
+
+Microsoft Entra ID tokens are also supported:
+
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://<resource-name>.openai.azure.com/"
+$env:AZURE_OPENAI_AUTH_TOKEN = az account get-access-token --resource "https://ai.azure.com/" --query accessToken -o tsv
+$env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"
+.\scripts\Start-LogSeederOpenAI.ps1
+```
+
+The OpenAI model can be changed with `LOGSEEDER_OPENAI_MODEL`. The public
+OpenAI base URL defaults to `https://api.openai.com/v1` and can be changed with
+`OPENAI_BASE_URL`.
 
 ## Menu Paths
 
@@ -66,10 +85,10 @@ Uses an existing schema from `schemas/` and calls:
 
 The default row count is intentionally small.
 
-### 3. Generate Product/Vendor Logs With OpenAI
+### 3. Generate Product/Vendor Logs With AI
 
-Calls the OpenAI Responses API and asks for a LogSeeder schema. The schema is
-saved into `schemas/<table>.json` only after confirmation.
+Calls the OpenAI or Azure OpenAI Responses API and asks for a LogSeeder schema.
+The schema is saved into `schemas/<table>.json` only after confirmation.
 
 The AI does not run Azure commands. It only creates structured JSON for the
 PowerShell launcher to review and save.
