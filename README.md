@@ -1,5 +1,48 @@
 # 🧪 Sentinel LogSeeder — Sample Data & Attack Scenario Ingestion
 
+# OpenAI PowerShell Mode
+
+This fork keeps the original Sentinel LogSeeder ingestion engine and adds a
+beginner-friendly PowerShell menu that can use the OpenAI API instead of GitHub
+Copilot for custom schema and planning tasks.
+
+Upstream project: https://github.com/javiersoriano/sentinel-logseeder
+
+## Fast Start
+
+```powershell
+git clone <your-repo-url>
+cd sentinel-logseeder-openai
+
+az login
+.\setup.ps1 -StartMenu
+```
+
+Optional OpenAI setup for custom/vendor generation:
+
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+$env:LOGSEEDER_OPENAI_MODEL = "gpt-4.1-mini"
+.\scripts\Start-LogSeederOpenAI.ps1
+```
+
+OpenAI is not required for prebuilt scenarios, known-table sample ingestion, or
+JSON/CSV sample-file ingestion. It is only used when you choose a custom AI path.
+
+Main entrypoints added by this fork:
+
+- `setup.ps1`
+- `scripts/Start-LogSeederOpenAI.ps1`
+- `scripts/LogSeeder.OpenAI.psm1`
+- `docs/openai-mode.md`
+
+Cost controls are built into the menu: tiny/small scenario sizes, low default row
+counts, preview-only mode, and confirmation before billable ingestion.
+
+The rest of this README is the original upstream documentation.
+
+---
+
 ![PowerShell 7+](https://img.shields.io/badge/PowerShell-7.0%2B-blue?logo=powershell&logoColor=white)
 ![Azure CLI](https://img.shields.io/badge/Azure%20CLI-2.50%2B-0078D4?logo=microsoft-azure&logoColor=white)
 ![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-required-181717?logo=github&logoColor=white)
