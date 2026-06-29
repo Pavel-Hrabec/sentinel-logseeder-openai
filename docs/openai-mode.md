@@ -73,7 +73,8 @@ Default mapping:
 | UserManagement | `ASimUserManagementActivityLogs` |
 
 The launcher writes a generated runtime scenario to `scenarios/*-openai-runtime.json`.
-Those files are ignored by git.
+Those files are ignored by git. Prebuilt scenarios always use the original
+upstream row and event counts.
 
 ### 2. Ingest Sample Data Into A Table
 
@@ -109,7 +110,7 @@ commands.
 
 ## Cost Controls
 
-- Tiny and Small scenario sizes are available before ingestion.
+- Prebuilt scenarios use the original upstream scenario size.
 - Default table generation is 25 rows.
 - The launcher asks for confirmation before billable ingestion.
 - OpenAI is only called for custom generation and "other" requests.
@@ -117,8 +118,8 @@ commands.
   OpenAI calls.
 
 Azure cost still depends on Log Analytics and Sentinel ingestion, retention,
-and queries. Use small row counts for demos and set workspace daily caps where
-appropriate.
+and queries. Use preview mode first, keep single-table/custom row counts low for
+demos, and set workspace daily caps where appropriate.
 
 ## Upstream Compatibility
 

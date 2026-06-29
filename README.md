@@ -45,8 +45,9 @@ Main entrypoints added by this fork:
 - `scripts/LogSeeder.OpenAI.psm1`
 - `docs/openai-mode.md`
 
-Cost controls are built into the menu: tiny/small scenario sizes, low default row
-counts, preview-only mode, and confirmation before billable ingestion.
+Cost controls are built into the menu: scenario ingestion uses the original
+upstream scenario size, table/sample-file generation defaults to low row counts,
+and all billable ingestion paths show a confirmation step first.
 
 The rest of this README is the original upstream documentation.
 
