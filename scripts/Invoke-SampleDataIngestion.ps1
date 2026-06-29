@@ -107,9 +107,9 @@ if (-not $EntitiesFile) {
 # Load shared workspace-context resolver
 . (Join-Path $scriptDir "_WorkspaceContext.ps1")
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
 # HELPER FUNCTIONS
-# ═══════════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
 
 function Assert-AzCli {
     try {
@@ -451,7 +451,7 @@ function Grant-DcrPublisherRole {
         [Parameter(Mandatory = $true)][string]$DcrId
     )
 
-    # Fixed role definition GUID for 'Monitoring Metrics Publisher' — avoids name-resolution issues.
+    # Fixed role definition GUID for 'Monitoring Metrics Publisher' - avoids name-resolution issues.
     $roleDefId = "3913510d-42f4-4e42-8a64-420c390055eb"
 
     $printReminder = {
@@ -505,7 +505,7 @@ function Grant-DcrPublisherRole {
         # Non-zero exit: check if it's the benign 'already exists' case.
         $errText = ($createOutput | Out-String)
         if ($errText -match "RoleAssignmentExists" -or $errText -match "already exists") {
-            Write-Host "[RBAC] Role assignment already exists — no action needed." -ForegroundColor Green
+            Write-Host "[RBAC] Role assignment already exists - no action needed." -ForegroundColor Green
             return
         }
 
@@ -668,7 +668,7 @@ function New-RandomValueForType {
             return [guid]::NewGuid().ToString()
         }
         default {
-            # String — generate contextual value based on column name
+            # String - generate contextual value based on column name
             if ($nameLower -match 'result|outcome') {
                 return ("Success", "Failure", "Partial", "NA" | Get-Random)
             }
@@ -935,7 +935,7 @@ function Send-Records {
                 $attempt++
                 $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(30, [math]::Pow(2, $attempt)) }
                 if ($isInvalidStream) {
-                    Write-Host "InvalidStream — waiting for DCR propagation (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+                    Write-Host "InvalidStream - waiting for DCR propagation (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
                 } elseif ($isTransportError) {
                     Write-Host "Transport error: $transportMessage. Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
                 } else {
@@ -955,9 +955,9 @@ function Send-Records {
     Write-Host "Successfully ingested $totalSent records in $($batches.Count) batch(es)." -ForegroundColor Green
 }
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
 # MAIN ORCHESTRATION
-# ═══════════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
 
 Assert-AzCli | Out-Null
 
@@ -1113,7 +1113,11 @@ if ($Ingest) {
         -StreamName $streamName -Records $records -AccessToken $token
 
     Write-Host "`nData ingestion complete. It may take 5-10 minutes for data to appear in Log Analytics." -ForegroundColor Green
-    Write-Host "Verify with: az monitor log-analytics query --workspace $($ws.WorkspaceId) --analytics-query `"$TableName | where TimeGenerated > ago(30m) | take 10`"" -ForegroundColor Cyan
+    $queryWindowMinutes = [Math]::Max(60, $TimeWindowMinutes + 15)
+    Write-Host "KQL query for Sentinel Logs:" -ForegroundColor Cyan
+    Write-Host $TableName -ForegroundColor DarkCyan
+    Write-Host ("| where TimeGenerated > ago(" + $queryWindowMinutes + "m)") -ForegroundColor DarkCyan
+    Write-Host "| order by TimeGenerated desc" -ForegroundColor DarkCyan
 }
 
 if (-not $Deploy -and -not $Ingest) {

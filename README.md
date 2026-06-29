@@ -49,6 +49,24 @@ Cost controls are built into the menu: scenario ingestion uses the original
 upstream scenario size, table/sample-file generation defaults to low row counts,
 and all billable ingestion paths show a confirmation step first.
 
+After ingestion, the scripts print a KQL query that you can paste directly into
+Microsoft Sentinel > Logs. To inspect all default ASIM tables used by the
+prebuilt scenarios, use:
+
+```kql
+union isfuzzy=true withsource=LogTable
+    ASimAuthenticationEventLogs,
+    ASimProcessEventLogs,
+    ASimFileEventLogs,
+    ASimRegistryEventLogs,
+    ASimNetworkSessionLogs,
+    ASimDnsActivityLogs,
+    ASimAuditEventLogs,
+    ASimUserManagementActivityLogs
+| where TimeGenerated > ago(24h)
+| order by TimeGenerated desc
+```
+
 The rest of this README is the original upstream documentation.
 
 ---

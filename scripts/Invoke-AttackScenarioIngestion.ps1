@@ -276,7 +276,7 @@ if ($Deploy) {
 
     foreach ($tableName in $tableNames) {
         if (-not $tableSchemas.ContainsKey($tableName)) {
-            Write-Host "Skipping '$tableName' — no schema file." -ForegroundColor Yellow
+            Write-Host "Skipping '$tableName' - no schema file." -ForegroundColor Yellow
             continue
         }
 
@@ -324,7 +324,7 @@ if ($Ingest) {
         Write-Host "Phase: $($phase.phase) | Table: $tableName | Events: $phaseCount | Offset: +$($phase.offsetMinutes)m" -ForegroundColor DarkCyan
 
         if (-not $tableSchemas.ContainsKey($tableName)) {
-            Write-Host "  Skipping — no schema for '$tableName'" -ForegroundColor Yellow
+            Write-Host "  Skipping - no schema for '$tableName'" -ForegroundColor Yellow
             continue
         }
 
@@ -569,14 +569,14 @@ if ($Ingest) {
     foreach ($tableName in $tableNames) {
         $records = $tableRecords[$tableName]
         if (-not $records -or $records.Count -eq 0) {
-            Write-Host "No records for '$tableName' — skipping." -ForegroundColor Yellow
+            Write-Host "No records for '$tableName' - skipping." -ForegroundColor Yellow
             continue
         }
 
         # Load deployment info
         $deployInfoPath = Join-Path $basePath "schemas" "$($tableName).deploy.json"
         if (-not (Test-Path $deployInfoPath)) {
-            Write-Host "No deployment info for '$tableName' — run with -Deploy first. Skipping." -ForegroundColor Yellow
+            Write-Host "No deployment info for '$tableName' - run with -Deploy first. Skipping." -ForegroundColor Yellow
             continue
         }
 
@@ -649,7 +649,7 @@ if ($Ingest) {
                     $attempt++
                     $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(30, [math]::Pow(2, $attempt)) }
                     if ($isInvalidStream) {
-                        Write-Host "InvalidStream — waiting for DCR propagation ($attempt/$maxAttempts)..." -ForegroundColor Yellow
+                        Write-Host "InvalidStream - waiting for DCR propagation ($attempt/$maxAttempts)..." -ForegroundColor Yellow
                     } elseif ($isTransportError) {
                         Write-Host "Transport error: $transportMessage. Retrying in $delaySeconds s ($attempt/$maxAttempts)..." -ForegroundColor Yellow
                     } else {
@@ -674,11 +674,17 @@ if ($Ingest) {
     Write-Host " Data may take 5-10 minutes to appear." -ForegroundColor Green
     Write-Host "========================================`n" -ForegroundColor Green
 
-    # Print verification queries
-    Write-Host "Verify with:" -ForegroundColor Cyan
-    foreach ($tableName in $tableNames) {
-        Write-Host "  az monitor log-analytics query --workspace $($wsConfig.WorkspaceId) --analytics-query `"$tableName | where TimeGenerated > ago(1h) | take 10`"" -ForegroundColor DarkCyan
+    # Print a KQL query that can be pasted directly into Sentinel Logs.
+    Write-Host "KQL query for Sentinel Logs:" -ForegroundColor Cyan
+    $queryWindowHours = [Math]::Max(1, $TimeWindowHours + 1)
+    Write-Host "union isfuzzy=true withsource=LogTable" -ForegroundColor DarkCyan
+    $queryTables = @($tableNames | Sort-Object -Unique)
+    for ($i = 0; $i -lt $queryTables.Count; $i++) {
+        $suffix = if ($i -lt ($queryTables.Count - 1)) { "," } else { "" }
+        Write-Host ("    {0}{1}" -f $queryTables[$i], $suffix) -ForegroundColor DarkCyan
     }
+    Write-Host ("| where TimeGenerated > ago(" + $queryWindowHours + "h)") -ForegroundColor DarkCyan
+    Write-Host "| order by TimeGenerated desc" -ForegroundColor DarkCyan
 }
 
 if (-not $Deploy -and -not $Ingest) {
@@ -688,7 +694,7 @@ if (-not $Deploy -and -not $Ingest) {
     Write-Host "  Tables: $($tableNames -join ', ')"
     Write-Host "  Phases: $($scenario.timeline.Count)"
     foreach ($phase in $scenario.timeline) {
-        Write-Host "    [$($phase.phase)] +$($phase.offsetMinutes)m → $($phase.table) ($($phase.count) events)" -ForegroundColor DarkGray
+        Write-Host "    [$($phase.phase)] +$($phase.offsetMinutes)m - $($phase.table) ($($phase.count) events)" -ForegroundColor DarkGray
     }
 }
 

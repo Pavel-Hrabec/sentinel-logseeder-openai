@@ -19,9 +19,9 @@ The data must match the **product's native log format** (not ASIM-normalized) an
 
 | Need | Tool / Command |
 |---|---|
-| Discover tables in workspace | Sentinel MCP server — *search tables* tool (if available), or `az monitor log-analytics query` |
-| Get schema + sample rows | Sentinel MCP server — *query* tool (if available), or `az monitor log-analytics query` |
-| Run KQL query | `az monitor log-analytics query --workspace <workspaceId> --analytics-query "<KQL>" --output json` |
+| Discover tables in workspace | Sentinel MCP server — *search tables* tool (if available), or Microsoft Sentinel > Logs |
+| Get schema + sample rows | Sentinel MCP server — *query* tool (if available), or Microsoft Sentinel > Logs |
+| Run KQL query | Paste the KQL into Microsoft Sentinel > Logs |
 | Fetch web documentation | `web` tool to read Microsoft docs, Sentinel GitHub, or product docs |
 | Single-table ingestion | `scripts/Invoke-SampleDataIngestion.ps1` |
 | Attack scenario ingestion | `scripts/Invoke-AttackScenarioIngestion.ps1` |
@@ -74,7 +74,7 @@ User provides table/product name  ─OR─  User provides a sample file
 │
 ├─ 1. Query workspace: does the table exist?
 │     Sentinel MCP server (search tables tool) or
-│     az monitor log-analytics query "<TableName> | take 1"
+│     Microsoft Sentinel > Logs: <TableName> | take 1
 │
 ├── TABLE EXISTS (schema in workspace)
 │   │
@@ -352,7 +352,7 @@ Immediately before sending your post-ingestion message, run through this checkli
 - [ ] Did I capture the `Scenario base TimeGenerated (UTC):` value from the script's stdout?
 - [ ] Did I include a markdown table with one row per phase from the runtime scenario file?
 - [ ] Did I include any background-noise rows reported by the script (`Adding N background noise records for '<table>'`)?
-- [ ] Did I append the verification KQL queries from the script's `Verify with:` output?
+- [ ] Did I append the verification KQL queries from the script's `KQL query for Sentinel Logs:` output?
 
 If any answer is "no", do not send the message — fix it first.
 

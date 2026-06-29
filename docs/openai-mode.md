@@ -121,6 +121,26 @@ Azure cost still depends on Log Analytics and Sentinel ingestion, retention,
 and queries. Use preview mode first, keep single-table/custom row counts low for
 demos, and set workspace daily caps where appropriate.
 
+## Verify Logs
+
+After ingestion, the scripts print a KQL query that can be pasted directly into
+Microsoft Sentinel > Logs. For prebuilt scenarios that use the default ASIM
+mapping, this query shows recent seeded rows across the supported tables:
+
+```kql
+union isfuzzy=true withsource=LogTable
+    ASimAuthenticationEventLogs,
+    ASimProcessEventLogs,
+    ASimFileEventLogs,
+    ASimRegistryEventLogs,
+    ASimNetworkSessionLogs,
+    ASimDnsActivityLogs,
+    ASimAuditEventLogs,
+    ASimUserManagementActivityLogs
+| where TimeGenerated > ago(24h)
+| order by TimeGenerated desc
+```
+
 ## Upstream Compatibility
 
 The original scripts remain the ingestion engine:
