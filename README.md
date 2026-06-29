@@ -1,57 +1,252 @@
-# 🧪 Sentinel LogSeeder — Sample Data & Attack Scenario Ingestion
+# Sentinel LogSeeder OpenAI
 
-# OpenAI PowerShell Mode
+Beginner-friendly PowerShell launcher for generating and ingesting synthetic
+security logs into Microsoft Sentinel / Log Analytics.
 
-This fork keeps the original Sentinel LogSeeder ingestion engine and adds a
-beginner-friendly PowerShell menu that can use the OpenAI API instead of GitHub
-Copilot for custom schema and planning tasks.
+This fork keeps the useful ingestion engine from the original
+[sentinel-logseeder](https://github.com/javiersoriano/sentinel-logseeder)
+project, but removes the need for GitHub Copilot. You can run prebuilt
+scenarios without any AI key. OpenAI or Azure OpenAI is only needed when you ask
+the tool to generate a new custom product/vendor schema or interpret a free-form
+request.
 
-Upstream project: https://github.com/javiersoriano/sentinel-logseeder
+## What This Does
 
-## Fast Start
+- Runs prebuilt attack scenarios into Microsoft Sentinel.
+- Generates sample rows for existing supported tables.
+- Ingests JSON or CSV sample files.
+- Optionally uses OpenAI or Azure OpenAI to create reusable custom schemas.
+- Prints KQL you can paste directly into Microsoft Sentinel > Logs.
+- Uses the original Azure Monitor Logs Ingestion API based scripts underneath.
+
+## What This Does Not Require
+
+- GitHub Copilot is not required.
+- OpenAI is not required for prebuilt scenarios.
+- OpenAI is not required for known-table sample ingestion.
+- OpenAI is not required for JSON/CSV file ingestion.
+
+## Prerequisites
+
+- Azure CLI installed and signed in with `az login`.
+- PowerShell 7 recommended. Windows PowerShell can start the menu, but
+  PowerShell 7 is the safer default for sharing and repeatable demos.
+- A Log Analytics workspace with Microsoft Sentinel enabled.
+- Permissions to create or reuse ingestion resources:
+  - Log Analytics Contributor, or equivalent permissions for workspace/table/DCR work.
+  - Permission to assign `Monitoring Metrics Publisher` on the DCR, or someone
+    with that permission can run the printed role assignment command.
+
+The scripts create or reuse:
+
+- Data Collection Endpoint (DCE)
+- Data Collection Rule (DCR)
+- Supported Log Analytics tables
+- DCR deployment metadata in ignored `schemas/*.deploy.json` files
+
+## Quick Start
 
 ```powershell
-git clone <your-repo-url>
+git clone https://github.com/Pavel-Hrabec/sentinel-logseeder-openai.git
 cd sentinel-logseeder-openai
 
 az login
-.\setup.ps1 -StartMenu
+pwsh -ExecutionPolicy Bypass -File .\setup.ps1 -StartMenu
 ```
 
-Optional OpenAI setup for custom/vendor generation:
+If `pwsh` is not available, Windows PowerShell can also start the setup:
 
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."
-$env:LOGSEEDER_OPENAI_MODEL = "gpt-4.1-mini"
-.\scripts\Start-LogSeederOpenAI.ps1
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -StartMenu
 ```
 
-Or use Azure OpenAI / Foundry:
+The setup script checks for common prerequisites, creates
+`config/workspace.json` if needed, and opens the interactive menu.
+
+## Workspace Configuration
+
+The setup wizard can create `config/workspace.json` interactively. You can also
+create it manually:
+
+```json
+{
+  "workspaceName": "<your-log-analytics-workspace-name>",
+  "subscriptionId": "<your-subscription-id>",
+  "resourceGroup": "<your-resource-group>",
+  "dceName": "sentinel-training-dce"
+}
+```
+
+You can use `workspaceId` instead of `workspaceName` if you prefer the workspace
+customer ID:
+
+```json
+{
+  "workspaceId": "<workspace-customer-id-guid>",
+  "subscriptionId": "<your-subscription-id>",
+  "resourceGroup": "<your-resource-group>",
+  "dceName": "sentinel-training-dce"
+}
+```
+
+`config/workspace.json` is ignored by git and should not be committed.
+
+## Optional AI Configuration
+
+AI is optional. Configure it only if you want to use:
+
+- Generate product/vendor logs with AI
+- Other / describe what you want
+- Custom schema generation
+
+### OpenAI
+
+```powershell
+$env:OPENAI_API_KEY = "<your-openai-api-key>"
+$env:LOGSEEDER_OPENAI_MODEL = "gpt-4.1-mini"
+pwsh -ExecutionPolicy Bypass -File .\scripts\Start-LogSeederOpenAI.ps1
+```
+
+### Azure OpenAI / Azure AI Foundry
 
 ```powershell
 $env:AZURE_OPENAI_ENDPOINT = "https://<resource-name>.openai.azure.com/"
-$env:AZURE_OPENAI_API_KEY = "<key>"
+$env:AZURE_OPENAI_API_KEY = "<your-azure-openai-key>"
 $env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"
-.\scripts\Start-LogSeederOpenAI.ps1
+pwsh -ExecutionPolicy Bypass -File .\scripts\Start-LogSeederOpenAI.ps1
 ```
 
-OpenAI is not required for prebuilt scenarios, known-table sample ingestion, or
-JSON/CSV sample-file ingestion. It is only used when you choose a custom AI path.
+Microsoft Entra token auth is also supported:
 
-Main entrypoints added by this fork:
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://<resource-name>.openai.azure.com/"
+$env:AZURE_OPENAI_DEPLOYMENT = "<deployment-name>"
+$env:AZURE_OPENAI_AUTH_TOKEN = az account get-access-token --resource "https://ai.azure.com/" --query accessToken -o tsv
+pwsh -ExecutionPolicy Bypass -File .\scripts\Start-LogSeederOpenAI.ps1
+```
 
-- `setup.ps1`
-- `scripts/Start-LogSeederOpenAI.ps1`
-- `scripts/LogSeeder.OpenAI.psm1`
-- `docs/openai-mode.md`
+Depending on your Azure AI resource, the endpoint may also look like
+`https://<resource-name>.cognitiveservices.azure.com/`.
 
-Cost controls are built into the menu: scenario ingestion uses the original
-upstream scenario size, table/sample-file generation defaults to low row counts,
-and all billable ingestion paths show a confirmation step first.
+Do not commit API keys, tokens, or local workspace config files.
 
-After ingestion, the scripts print a KQL query that you can paste directly into
-Microsoft Sentinel > Logs. To inspect all default ASIM tables used by the
-prebuilt scenarios, use:
+## Menu Options
+
+When you run `setup.ps1 -StartMenu` or `scripts/Start-LogSeederOpenAI.ps1`, you
+get a numbered menu.
+
+| Option | What it does | Needs AI? | Good for |
+|---|---|---:|---|
+| Run prebuilt attack scenario | Lets you choose a scenario from `scenarios/`, maps it to supported ASIM tables, deploys resources, and optionally ingests correlated attack data. | No | First demo, Sentinel detections, training data |
+| Ingest sample data into a table | Uses an existing schema from `schemas/` and generates rows for one table. | No | Quick table validation |
+| Generate product/vendor logs with AI | Uses OpenAI or Azure OpenAI to create a reusable schema, then optionally deploys and ingests sample rows. | Yes | New custom log source demos |
+| Ingest JSON/CSV sample file | Infers a schema from a local sample file and ingests generated rows using values from that file. | No | Turning real-looking samples into Sentinel test data |
+| Configure/test workspace | Creates or reviews `config/workspace.json`. | No | Setup and troubleshooting |
+| Other / describe what you want | Uses AI to recommend the safest next menu path. | Yes | Guidance when you are unsure |
+
+Most ingestion paths then ask for an action:
+
+| Action | What happens |
+|---|---|
+| Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. This can create Azure/Sentinel ingestion cost. |
+| Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
+| Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
+| Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
+
+## Recommended First Run
+
+Use a prebuilt scenario first because it does not require any AI key.
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\setup.ps1 -StartMenu
+```
+
+Then choose:
+
+1. `Run prebuilt attack scenario`
+2. A scenario such as `brute-force-lateral-movement`
+3. `Use ASIM defaults`
+4. `Preview command only`
+
+Review the command. If it looks correct, run the same path again and choose
+`Deploy and ingest`.
+
+Prebuilt scenarios use the original upstream scenario size. The script shows a
+cost guard before any billable ingestion.
+
+## Example: Run A Prebuilt Scenario
+
+What it does:
+
+- Reads a scenario JSON file from `scenarios/`.
+- Converts abstract categories such as `Authentication`, `ProcessEvent`, and
+  `NetworkSession` into supported ASIM destination tables.
+- Creates a runtime scenario file in `scenarios/*-openai-runtime.json`.
+- Deploys or reuses DCE/DCR/table resources.
+- Ingests correlated synthetic events.
+- Prints KQL for Sentinel Logs.
+
+Example destination tables:
+
+- `ASimAuthenticationEventLogs`
+- `ASimNetworkSessionLogs`
+- `ASimProcessEventLogs`
+
+## Example: Ingest Sample Data Into A Table
+
+What it does:
+
+- Lets you choose an existing schema from `schemas/`.
+- Asks how many rows to generate. The default is intentionally low.
+- Deploys or reuses ingestion resources.
+- Sends generated rows to the selected table.
+- Prints KQL for that table.
+
+Example use cases:
+
+- Generate 25 rows for `ASimAuthenticationEventLogs`.
+- Generate test rows for a custom `_CL` table.
+- Validate that a DCR and DCE are working.
+
+## Example: Generate Product/Vendor Logs With AI
+
+What it does:
+
+- Asks for a product/vendor or log source name.
+- Calls OpenAI or Azure OpenAI to draft a LogSeeder schema.
+- Saves the schema into `schemas/<table>.json` after confirmation.
+- Optionally runs deployment and ingestion for that generated table.
+
+Example ideas:
+
+- `Okta authentication events`
+- `Contoso VPN login logs`
+- `Custom firewall deny events`
+- `Demo EDR process telemetry`
+
+The generated schema is just a local JSON file. You can review and edit it
+before ingesting anything.
+
+## Example: Ingest A JSON Or CSV Sample File
+
+What it does:
+
+- Reads a local `.json` or `.csv` file.
+- Infers columns and sample values.
+- Creates/reuses ingestion resources.
+- Generates rows using values from the file.
+- Sends them to the destination table.
+
+This is useful when you have sample logs but do not want to write the schema by
+hand.
+
+## Verify Logs In Sentinel
+
+After ingestion, the scripts print KQL that can be pasted directly into
+Microsoft Sentinel > Logs.
+
+For default ASIM scenario tables, this query shows recent seeded rows across the
+common prebuilt destinations:
 
 ```kql
 union isfuzzy=true withsource=LogTable
@@ -67,286 +262,104 @@ union isfuzzy=true withsource=LogTable
 | order by TimeGenerated desc
 ```
 
-The rest of this README is the original upstream documentation.
+For a single table, use:
 
----
+```kql
+<TableName>
+| where TimeGenerated > ago(24h)
+| order by TimeGenerated desc
+```
 
-![PowerShell 7+](https://img.shields.io/badge/PowerShell-7.0%2B-blue?logo=powershell&logoColor=white)
-![Azure CLI](https://img.shields.io/badge/Azure%20CLI-2.50%2B-0078D4?logo=microsoft-azure&logoColor=white)
-![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-required-181717?logo=github&logoColor=white)
-![Microsoft Sentinel](https://img.shields.io/badge/Microsoft%20Sentinel-enabled-0078D4?logo=microsoft&logoColor=white)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
-![License](https://img.shields.io/github/license/noodlemctwoodle/Sentinel-CLv1-Analyzer)
+Logs can take 5-10 minutes to appear after ingestion.
 
-A Microsoft Sentinel toolkit for generating and ingesting **realistic sample data** into Log Analytics tables via the Azure Monitor Logs Ingestion API. Supports both single-table ingestion and **multi-table attack scenarios** that simulate coordinated threat activity across correlated tables.
+## Supported Destinations
 
----
+The Azure Monitor Logs Ingestion API supports custom `_CL` tables and a limited
+set of built-in tables. This project is designed around those supported
+destinations.
 
-## 🎯 What does this do?
+Good default choices for scenarios are the ASIM normalized tables included in
+the repo:
 
-| Capability | Description |
+- `ASimAuthenticationEventLogs`
+- `ASimProcessEventLogs`
+- `ASimFileEventLogs`
+- `ASimRegistryEventLogs`
+- `ASimNetworkSessionLogs`
+- `ASimDnsActivityLogs`
+- `ASimAuditEventLogs`
+- `ASimUserManagementActivityLogs`
+- `ASimWebSessionLogs`
+- `ASimDhcpEventLogs`
+
+You cannot ingest into vendor-managed tables such as `SigninLogs`, `AuditLogs`,
+or `DeviceProcessEvents`. Those tables are populated by their source products.
+Use supported ASIM tables or custom `_CL` tables for synthetic training data.
+
+## Project Structure
+
+| Path | Purpose |
 |---|---|
-| **Product-level ingestion** | Ask the agent to ingest sample data for a product (e.g., "ingest data for CrowdStrike" or "ingest data for AWS GuardDuty") and it will automatically research the associated Sentinel tables and APIs, build schemas, and handle the full ingestion pipeline. |
-| **Single-table ingestion** | Generate randomized sample data for any Sentinel / Log Analytics table — built-in or custom (`_CL`). The agent discovers the schema, researches realistic field values, deploys infrastructure (DCE, DCR, custom table), and ingests data. |
-| **Sample file ingestion** | Provide a JSON or CSV file with log records and the agent will analyze the data, identify the target table, build the schema, and ingest it — no manual schema authoring needed. |
-| **Attack scenario ingestion** | Ingest **coordinated events across multiple tables** that tell a coherent attack story (e.g., brute-force login → lateral movement → ransomware deployment). Entities are correlated across tables with realistic timing. The agent lets the user **choose which product to use for each stage** of the attack (e.g., CrowdStrike for endpoint events, AWS for cloud trail logs), so scenarios can span multiple vendor data sources. |
-| **Entity seeding** | All generated data draws from configurable entity pools (users, IPs, devices, domains, URLs) for consistency across tables and scenarios. |
+| `setup.ps1` | Beginner setup and optional menu launcher |
+| `scripts/Start-LogSeederOpenAI.ps1` | Interactive menu entrypoint |
+| `scripts/LogSeeder.OpenAI.psm1` | Menu logic and OpenAI/Azure OpenAI integration |
+| `scripts/Invoke-SampleDataIngestion.ps1` | Original single-table ingestion engine, with KQL verification output |
+| `scripts/Invoke-AttackScenarioIngestion.ps1` | Original multi-table scenario ingestion engine, with KQL verification output |
+| `schemas/` | Reusable table schema JSON files |
+| `scenarios/` | Prebuilt attack scenario JSON files |
+| `samples/` | Example JSON/CSV data files |
+| `config/entities.json` | Shared entity pools for users, IPs, devices, domains, and URLs |
+| `config/workspace.json.template` | Example workspace configuration |
+| `docs/openai-mode.md` | More detail on the OpenAI/Azure OpenAI mode |
+| `NOTICE.md` | Notes about the upstream project and fork changes |
 
----
+Generated local files are ignored by git:
 
-## 🚀 Quick Start
+- `config/workspace.json`
+- `schemas/*.deploy.json`
+- `scenarios/*-openai-runtime.json`
 
-### Prerequisites
+## Cost Notes
 
-- **GitHub Copilot** — an active GitHub Copilot subscription is required to use the AI-driven ingestion workflows
-- **Azure CLI** (`az`) installed and authenticated (`az login`)
-  - The **log-analytics** extension is required: `az extension add --name log-analytics`
-- **PowerShell 7+** recommended
-  - The execution policy needs to be set to Bypass, make sure you restore your value after ingesting: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass`.
-- A **Log Analytics workspace** with Microsoft Sentinel enabled
-- **Azure RBAC permissions** on the target resource group:
-  - **Log Analytics Contributor** — to create Data Collection Endpoints (DCE), Data Collection Rules (DCR), and custom tables
-  - **User Access Administrator** — to assign the `Monitoring Metrics Publisher` role on the DCR (required for data ingestion)
+- Preview mode does not make Azure changes.
+- Deploy only creates/reuses Azure resources but does not ingest rows.
+- Deploy and ingest sends billable Log Analytics/Sentinel data.
+- Prebuilt scenarios use the original scenario row/event counts.
+- Single-table and custom AI paths default to low row counts.
+- Set workspace daily caps and retention appropriately for demos.
 
-> The agent handles creating the DCE, DCR, and custom tables, and attempts to assign the `Monitoring Metrics Publisher` role on the DCR automatically during `-Deploy`. If the caller lacks `Microsoft.Authorization/roleAssignments/write`, the script falls back to printing the manual `az role assignment create` command. Use `-SkipRoleAssignment` to opt out.
+## Troubleshooting
 
-### 1. Clone the repo and open in VS Code or GitHub Copilot
+If Azure CLI is not signed in:
 
-```bash
-git clone https://github.com/your-org/sentinel-logseeder.git
-cd sentinel-logseeder
+```powershell
+az login
+az account show
 ```
 
-Then open in **VS Code**:
+If role assignment fails during deployment, ask someone with Owner or User
+Access Administrator permissions to assign `Monitoring Metrics Publisher` on the
+DCR. The script prints a command you can use.
 
-```bash
-code .
+If logs do not appear immediately, wait 5-10 minutes and rerun the KQL with a
+larger time window:
+
+```kql
+<TableName>
+| where TimeGenerated > ago(48h)
+| order by TimeGenerated desc
 ```
 
-Or open with the **GitHub Copilot CLI**:
+If custom AI generation says AI is not configured, set either the OpenAI
+environment variables or the Azure OpenAI environment variables shown above.
 
-```bash
-copilot
-```
+## Upstream Credit
 
-> **Tip:** Once open in VS Code, GitHub Copilot agent mode will automatically pick up the instructions in `.github/copilot-instructions.md`.
+This repository is based on the original Sentinel LogSeeder project by Javier
+Soriano:
 
-### 2. Configure your workspace
+https://github.com/javiersoriano/sentinel-logseeder
 
-Rename `config/workspace.json.template` to `config/workspace.json`, then specify just the workspace name (everything else is resolved from your current `az login` context):
-
-```json
-{
-  "workspaceName": "<your-workspace-name>"
-}
-```
-
-Alternatively, identify the workspace by its customer ID (GUID):
-
-```json
-{
-  "workspaceId": "<workspace-customer-id-guid>"
-}
-```
-
-**Auto-resolved fields** (from `az` context): `tenantId`, `subscriptionId`, `resourceGroup`, the other identifier, `dceName`. Add any of these explicitly to override or to disambiguate when the same `workspaceName` exists in multiple subscriptions you can access.
-
-> **Requirements:** Azure CLI signed in (`az login`) against the workspace's tenant, plus the Resource Graph extension (`az extension add --name resource-graph`) for cross-subscription auto-resolution.
-
-> **Note:** `config/workspace.json` is in `.gitignore` and will never be committed.
-
-### 3. Ingest sample data for a single table
-
-Sample GitHub Copilot prompts:
-
-> *"Ingest sample data for the `AWSCloudTrail` table"*
-
-> *"Ingest sample data for `Proofpoint TAP`"*
-
-> *"Ingest this sample file into Sentinel"* (attach or reference a JSON/CSV file with log records)
-
-> **Note:** By default, generated records are spread across the **last 30 minutes** (`TimeGenerated`). You can ask for a different window in natural language, e.g. *"...spread across the last 24 hours"* or *"...over the past 2 hours"*.
-
-### 4. Ingest an attack scenario
-
-Sample GitHub Copilot prompts:
-
-> *"Run the brute-force-lateral-movement attack scenario"*
-
-> *"Ingest sample data that simulates the data exfiltration attack scenario"*
-
-
----
-
-## 📂 Project Structure
-
-| Folder / File | Purpose |
-|---|---|
-| `scripts/Invoke-SampleDataIngestion.ps1` | Core engine — deploys infrastructure and ingests sample data for a single table |
-| `scripts/Invoke-AttackScenarioIngestion.ps1` | Orchestrator — reads a scenario definition and ingests correlated data across multiple tables |
-| `config/workspace.json` | Workspace identifier — typically just `workspaceName`; other coordinates are auto-resolved from `az` context |
-| `config/entities.json` | Entity pools (users, IPs, devices, domains, URLs, emails) shared across all ingestion |
-| `schemas/` | Table schema definitions (JSON) — created by the agent or manually. Pre-populated with most built-in schemas that support direct ingestion  |
-| `samples/` | Sample data files (JSON/CSV) for realistic value distributions |
-| `scenarios/` | Attack scenario definitions (JSON) — pre-built and custom |
-| `.github/skills/sentinel-logseeder/SKILL.md` | AI agent skill file for GitHub Copilot-driven ingestion workflows |
-| `.github/` | GitHub Copilot agent definition and instructions |
-
----
-
-## 📥 Supported Tables
-
-This tool uses the [Azure Monitor Logs Ingestion API](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview) to send data. The API only supports ingestion into **custom log tables** (with a `_CL` suffix) and a specific set of **built-in Azure tables**. You **cannot** ingest data into vendor-managed tables such as `SigninLogs`, `AuditLogs`, `DeviceProcessEvents`, etc. — those are populated exclusively by their respective products.
-
-| Table Type | Supported? | Notes |
-|---|---|---|
-| **Custom tables (`_CL`)** | ✅ Yes | Any custom table you create in your Log Analytics workspace. Must exist before ingestion. |
-| **Built-in Azure tables** (listed below) | ✅ Yes | Only the specific tables listed below accept data via the Logs Ingestion API. |
-| **Vendor-managed tables** (e.g., `SigninLogs`, `DeviceProcessEvents`) | ❌ No | Read-only — populated by their respective services. Use ASIM normalized tables or `SecurityEvent` as alternatives. |
-
-<details>
-<summary><b>Full list of supported built-in Azure tables</b></summary>
-
-Source: [Logs Ingestion API — Supported Tables](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview#supported-tables)
-
-**ASIM Normalized Tables:**
-`ASimAuditEventLogs`, `ASimAuthenticationEventLogs`, `ASimDhcpEventLogs`, `ASimDnsActivityLogs`, `ASimFileEventLogs`, `ASimNetworkSessionLogs`, `ASimProcessEventLogs`, `ASimRegistryEventLogs`, `ASimUserManagementActivityLogs`, `ASimWebSessionLogs`
-
-**Security & Monitoring:**
-`Anomalies`, `CommonSecurityLog`, `DnsAuditEvents`, `Event`, `SecurityEvent`, `Syslog`, `ThreatIntelIndicators`, `ThreatIntelligenceIndicator`, `ThreatIntelObjects`, `WindowsEvent`
-
-**SAP:**
-`ABAPAuditLog`, `ABAPAuthorizationDetails`, `ABAPChangeDocsLog`, `ABAPUserDetails`
-
-**AWS:**
-`AWSALBAccessLogs`, `AWSCloudTrail`, `AWSCloudWatch`, `AWSEKS`, `AWSELBFlowLogs`, `AWSGuardDuty`, `AWSNetworkFirewallAlert`, `AWSNetworkFirewallFlow`, `AWSNetworkFirewallTls`, `AWSNLBAccessLogs`, `AWSRoute53Resolver`, `AWSS3ServerAccess`, `AWSSecurityHubFindings`, `AWSVPCFlow`, `AWSWAF`
-
-**GCP:**
-`GCPApigee`, `GCPAuditLogs`, `GCPCDN`, `GCPCloudRun`, `GCPCloudSQL`, `GCPComputeEngine`, `GCPDNS`, `GCPFirewallLogs`, `GCPIAM`, `GCPIDS`, `GCPMonitoring`, `GCPNAT`, `GCPNATAudit`, `GCPResourceManager`, `GCPVPCFlow`
-
-**GKE:**
-`GKEAPIServer`, `GKEApplication`, `GKEAudit`, `GKEControllerManager`, `GKEHPADecision`, `GKEScheduler`
-
-**Google:**
-`GoogleCloudSCC`, `GoogleWorkspaceReports`
-
-**CrowdStrike:**
-`CrowdStrikeAlerts`, `CrowdStrikeAPIActivityAudit`, `CrowdStrikeAuthActivityAudit`, `CrowdStrikeCases`, `CrowdStrikeCSPMIOAStreaming`, `CrowdStrikeCSPMSearchStreaming`, `CrowdStrikeCustomerIOC`, `CrowdStrikeDetections`, `CrowdStrikeHosts`, `CrowdStrikeIncidents`, `CrowdStrikeReconNotificationSummary`, `CrowdStrikeRemoteResponseSessionEnd`, `CrowdStrikeRemoteResponseSessionStart`, `CrowdStrikeScheduledReportNotification`, `CrowdStrikeUserActivityAudit`, `CrowdStrikeVulnerabilities`
-
-**Sentinel:**
-`SentinelAlibabaCloudAPIGatewayLogs`, `SentinelAlibabaCloudVPCFlowLogs`, `SentinelAlibabaCloudWAFLogs`, `SentinelTheHiveData`
-
-**Azure & Storage:**
-`AzureAssessmentRecommendation`, `AzureMetricsV2`, `StorageInsightsAccountPropertiesDaily`, `StorageInsightsDailyMetrics`, `StorageInsightsHourlyMetrics`, `StorageInsightsMonthlyMetrics`, `StorageInsightsWeeklyMetrics`
-
-**Threat Intelligence:**
-`ThreatIntelIndicators`, `ThreatIntelligenceIndicator`, `ThreatIntelObjects`
-
-**Assessment & Compliance:**
-`ADAssessmentRecommendation`, `ADSecurityAssessmentRecommendation`, `ExchangeAssessmentRecommendation`, `ExchangeOnlineAssessmentRecommendation`, `SCCMAssessmentRecommendation`, `SCOMAssessmentRecommendation`, `SfBAssessmentRecommendation`, `SfBOnlineAssessmentRecommendation`, `SharePointOnlineAssessmentRecommendation`, `SPAssessmentRecommendation`, `SQLAssessmentRecommendation`, `WindowsClientAssessmentRecommendation`, `WindowsServerAssessmentRecommendation`
-
-**Update Compliance:**
-`UCClient`, `UCClientReadinessStatus`, `UCClientUpdateStatus`, `UCDeviceAlert`, `UCDOAggregatedStatus`, `UCDOStatus`, `UCServiceUpdateStatus`, `UCUpdateAlert`
-
-**Other:**
-`DeviceTvmSecureConfigurationAssessmentKB`, `DeviceTvmSoftwareVulnerabilitiesKB`, `IlumioInsights`, `OTelLogs`, `QualysKnowledgeBase`, `Rapid7InsightVMCloudAssets`, `Rapid7InsightVMCloudVulnerabilities`
-
-</details>
-
-> **Tip:** If a table is NOT in this list and is NOT a custom `_CL` table, you cannot ingest data into it. Use the corresponding ASIM normalized table or `SecurityEvent` as an alternative.
-
----
-
-## 🗡️ Pre-built Attack Scenarios
-
-| Scenario | Tables | Description |
-|---|---|---|
-| [Brute Force + Lateral Movement](scenarios/brute-force-lateral-movement.json) | Authentication, NetworkSession, ProcessEvent | Repeated auth failures from external IP → successful login → RDP session to internal host → process execution |
-| [Ransomware Deployment](scenarios/ransomware-deployment.json) | Authentication, ProcessEvent, FileEvent, RegistryEvent | Phishing-compromised account → malicious process execution → mass file encryption → registry persistence |
-| [Data Exfiltration](scenarios/data-exfiltration.json) | AuditEvent, FileEvent, NetworkSession, Dns | Privileged access to sensitive resources → bulk file reads → large outbound transfers → DNS tunneling |
-| [Credential Theft + Privilege Escalation](scenarios/credential-theft-privesc.json) | Authentication, ProcessEvent, UserManagement | Compromised account → LSASS memory dump → new admin user creation → elevated session |
-
----
-
-## 🤖 Auto-Generated Scenarios from Atomic Red Team
-
-In addition to the curated scenarios above, the toolkit can automatically produce **product-agnostic attack scenarios from the [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) project**, keeping coverage current with community-maintained MITRE ATT&CK technique tests.
-
-Generated scenarios are written to [`scenarios/generated/`](scenarios/generated/) and follow the exact same format as the hand-built scenarios above, so they're consumable by the agent.
-
-### Current Coverage 
-
-| Technique | Name | Tables |
-|---|---|---|
-| T1003 | OS Credential Dumping | ProcessEvent, FileEvent |
-| T1005 | Data from Local System | FileEvent |
-| T1021 | Remote Services | Authentication |
-| T1053 | Scheduled Task/Job | ProcessEvent, RegistryEvent |
-| T1059 | Command and Scripting Interpreter | ProcessEvent |
-| T1078 | Valid Accounts | Authentication |
-| T1110 | Brute Force | Authentication |
-| T1136 | Create Account | AuditEvent |
-| T1486 | Data Encrypted for Impact | FileEvent, ProcessEvent |
-| T1547 | Boot or Logon Autostart Execution | RegistryEvent, ProcessEvent |
-
-
----
-
-## 📋 Attack Scenario Format
-
-Scenarios are defined in JSON with correlated entities and timed event phases:
-
-```json
-{
-  "name": "scenario-name",
-  "description": "What this scenario simulates",
-  "tables": {
-    "Authentication": { "schema": "schemas/Authentication.json", "rowCount": 50 },
-    "ProcessEvent": { "schema": "schemas/ProcessEvent.json", "rowCount": 20 }
-  },
-  "timeline": [
-    {
-      "phase": "Initial Access",
-      "offsetMinutes": 0,
-      "durationMinutes": 30,
-      "table": "Authentication",
-      "eventTemplate": { ... },
-      "count": 25
-    }
-  ],
-  "actors": {
-    "attacker": { "ip": "external", "username": null },
-    "victim": { "username": "random", "device": "random" }
-  }
-}
-```
-
-See [scenarios/_template.json](scenarios/_template.json) for the full schema.
-
----
-
-## 🔧 Configuration
-
-### Entity Pools (`config/entities.json`)
-
-Customize the users, IPs, devices, domains, and URLs used in generated data. All ingestion — both single-table and attack scenarios — draws from these pools for consistency.
-
-### Workspace Config (`config/workspace.json`)
-
-Workspace identifier used by all scripts. Minimum content is a single `workspaceName` (or `workspaceId` GUID); remaining coordinates are auto-resolved from your current `az login` context via Azure Resource Graph. Both ingestion scripts accept `-WorkspaceConfig` and `-EntitiesFile` parameters to override defaults.
-
----
-
-## ❓ Troubleshooting
-
-| Issue | Resolution |
-|---|---|
-| `403 Forbidden` on ingestion | Assign `Monitoring Metrics Publisher` role on the DCR to the signed-in user |
-| `InvalidStream` error | DCR hasn't propagated yet — the script retries automatically |
-| Data not visible | Ingestion delay is typically 5–10 minutes for newly created tables |
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+This fork keeps the original ingestion approach and reusable scenario/schema
+assets, then adds a PowerShell menu and OpenAI/Azure OpenAI option so beginners
+can run it without GitHub Copilot.
