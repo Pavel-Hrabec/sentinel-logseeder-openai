@@ -411,11 +411,49 @@ function Initialize-Dcr {
         $existing = Invoke-ArmRest -Method "GET" -Uri $dcrUri
     } catch { }
 
+    $body = $Template | ConvertTo-Json -Depth 20 -Compress
+
     if ($existing) {
-        Write-Host "Reusing existing DCR '$DcrName'." -ForegroundColor Green
+        $needsUpdate = $false
+        $desiredDceId = [string]$Template.properties.dataCollectionEndpointId
+        $currentDceId = [string]$existing.properties.dataCollectionEndpointId
+
+        if (-not [string]::Equals($currentDceId, $desiredDceId, [StringComparison]::OrdinalIgnoreCase)) {
+            Write-Host "Existing DCR '$DcrName' is associated with a different DCE. Updating it." -ForegroundColor Yellow
+            $needsUpdate = $true
+        }
+
+        $desiredWorkspaceId = [string](@($Template.properties.destinations.logAnalytics)[0].workspaceResourceId)
+        $currentWorkspaceId = ""
+        if ($existing.properties.destinations -and $existing.properties.destinations.logAnalytics) {
+            $currentWorkspaceId = [string](@($existing.properties.destinations.logAnalytics)[0].workspaceResourceId)
+        }
+
+        if (-not [string]::Equals($currentWorkspaceId, $desiredWorkspaceId, [StringComparison]::OrdinalIgnoreCase)) {
+            Write-Host "Existing DCR '$DcrName' points to a different workspace destination. Updating it." -ForegroundColor Yellow
+            $needsUpdate = $true
+        }
+
+        $existingStreams = @()
+        if ($existing.properties.streamDeclarations) {
+            $existingStreams = @($existing.properties.streamDeclarations.PSObject.Properties.Name)
+        }
+        foreach ($streamName in @($Template.properties.streamDeclarations.Keys)) {
+            if ($existingStreams -notcontains $streamName) {
+                Write-Host "Existing DCR '$DcrName' is missing stream '$streamName'. Updating it." -ForegroundColor Yellow
+                $needsUpdate = $true
+                break
+            }
+        }
+
+        if ($needsUpdate) {
+            $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
+            Write-Host "DCR '$DcrName' updated." -ForegroundColor Green
+        } else {
+            Write-Host "Reusing existing DCR '$DcrName'." -ForegroundColor Green
+        }
     } else {
         Write-Host "Creating DCR '$DcrName'..." -ForegroundColor Cyan
-        $body = $Template | ConvertTo-Json -Depth 20 -Compress
         $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
         Write-Host "DCR '$DcrName' created." -ForegroundColor Green
     }

@@ -73,7 +73,7 @@ create it manually:
   "workspaceName": "<your-log-analytics-workspace-name>",
   "subscriptionId": "<your-subscription-id>",
   "resourceGroup": "<your-resource-group>",
-  "dceName": "sentinel-training-dce"
+  "dceName": "sample-data-dce"
 }
 ```
 
@@ -85,7 +85,7 @@ customer ID:
   "workspaceId": "<workspace-customer-id-guid>",
   "subscriptionId": "<your-subscription-id>",
   "resourceGroup": "<your-resource-group>",
-  "dceName": "sentinel-training-dce"
+  "dceName": "sample-data-dce"
 }
 ```
 
@@ -340,6 +340,11 @@ az account show
 If role assignment fails during deployment, ask someone with Owner or User
 Access Administrator permissions to assign `Monitoring Metrics Publisher` on the
 DCR. The script prints a command you can use.
+
+If ingestion fails with a message like `data collection endpoint FQDN is not
+associated with the data collection rule`, rerun the same path with `Deploy and
+ingest` or `Deploy only`. The deployment step checks existing DCRs and updates
+them when they point to an old or different DCE.
 
 If logs do not appear immediately, wait 5-10 minutes and rerun the KQL with a
 larger time window:
