@@ -158,6 +158,25 @@ function Read-Number {
     }
 }
 
+function ConvertTo-CustomTableName {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    $base = $Name.Trim()
+    $base = $base -replace '_CL$', ''
+    $base = $base -replace '[^A-Za-z0-9_]', '_'
+    $base = $base -replace '_+', '_'
+    $base = $base.Trim('_')
+
+    if ([string]::IsNullOrWhiteSpace($base)) {
+        $base = "CustomLogs"
+    }
+    if ($base -match '^[0-9]') {
+        $base = "T_$base"
+    }
+
+    return "${base}_CL"
+}
+
 function Read-MenuChoice {
     param(
         [Parameter(Mandatory = $true)][string]$Title,
@@ -976,11 +995,12 @@ function Invoke-CustomGenerationWorkflow {
     }
 
     $product = Read-Text -Prompt "Product/vendor or log source"
-    $tableDefault = (($product -replace '[^A-Za-z0-9]', '') + "_CL")
+    $tableDefault = ConvertTo-CustomTableName -Name $product
     $tableName = Read-Text -Prompt "Target custom table name" -Default $tableDefault
-    if ($tableName -notlike "*_CL") {
-        Write-Host "Custom tables should end in _CL. I will use ${tableName}_CL." -ForegroundColor Yellow
-        $tableName = "${tableName}_CL"
+    $normalizedTableName = ConvertTo-CustomTableName -Name $tableName
+    if ($normalizedTableName -ne $tableName) {
+        Write-Host "Using custom table name '$normalizedTableName'." -ForegroundColor Yellow
+        $tableName = $normalizedTableName
     }
     $description = Read-Text -Prompt "What should the synthetic logs represent?"
 

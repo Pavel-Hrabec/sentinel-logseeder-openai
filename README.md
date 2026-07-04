@@ -365,6 +365,10 @@ larger time window:
 If custom AI generation says AI is not configured, set either the OpenAI
 environment variables or the Azure OpenAI environment variables shown above.
 
+If custom table deployment says a table already exists with different casing,
+for example `fortinet_CL` exists as `Fortinet_CL`, rerun with the latest code.
+The deploy step reuses the Azure table casing for the DCR and ingestion stream.
+
 ## Upstream Credit
 
 This repository is based on the original Sentinel LogSeeder project by Javier

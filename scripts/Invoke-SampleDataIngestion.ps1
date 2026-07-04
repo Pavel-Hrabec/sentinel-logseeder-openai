@@ -299,7 +299,17 @@ function Initialize-CustomTable {
             }
         } | ConvertTo-Json -Depth 20 -Compress
 
-        $null = Invoke-ArmRest -Method "PUT" -Uri $tableUri -JsonBody $body
+        try {
+            $null = Invoke-ArmRest -Method "PUT" -Uri $tableUri -JsonBody $body
+        } catch {
+            $message = $_.Exception.Message
+            if ($message -match "exist in CMS with name:\s*([A-Za-z0-9_]+)") {
+                $existingName = $Matches[1]
+                Write-Host "Custom table '$CustomTableName' already exists as '$existingName'. Reusing Azure table casing." -ForegroundColor Yellow
+                return $existingName
+            }
+            throw
+        }
 
         # Wait for provisioning
         for ($i = 0; $i -lt 12; $i++) {
@@ -308,12 +318,14 @@ function Initialize-CustomTable {
                 $table = Invoke-ArmRest -Method "GET" -Uri $tableUri
                 if ($table.properties.provisioningState -eq "Succeeded") {
                     Write-Host "Custom table '$CustomTableName' created." -ForegroundColor Green
-                    return
+                    return $CustomTableName
                 }
             } catch { }
         }
         throw "Custom table '$CustomTableName' did not reach Succeeded state."
     }
+
+    return $CustomTableName
 }
 
 # ---------------------------------------------------------------------------
@@ -1077,7 +1089,11 @@ if ($Deploy) {
 
     # 2. Custom table (only for _CL tables)
     if (-not $isBuiltIn) {
-        Initialize-CustomTable -WorkspaceResourceId $ws.WorkspaceResourceId -CustomTableName $TableName -ColumnDefinitions $columnDefs
+        $resolvedTableName = Initialize-CustomTable -WorkspaceResourceId $ws.WorkspaceResourceId -CustomTableName $TableName -ColumnDefinitions $columnDefs
+        if (-not [string]::Equals($resolvedTableName, $TableName, [StringComparison]::Ordinal)) {
+            Write-Host "Using existing table name '$resolvedTableName' for DCR and ingestion." -ForegroundColor Yellow
+            $TableName = $resolvedTableName
+        }
     }
 
     # 3. DCR
