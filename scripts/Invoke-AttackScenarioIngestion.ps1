@@ -617,7 +617,7 @@ if ($Ingest) {
             if (-not $payload.StartsWith("[")) { $payload = "[$payload]" }
 
             $attempt = 0
-            $maxAttempts = 4
+            $maxAttempts = 12
             while ($true) {
                 $statusCode = $null
                 $responseBody = $null
@@ -643,13 +643,16 @@ if ($Ingest) {
                 }
 
                 $isInvalidStream = ($responseBody -and $responseBody -match "InvalidStream")
+                $isDceAssociationPending = ($statusCode -eq 403 -and $responseBody -and $responseBody -match "not associated with the data collection rule")
                 $isRetryable = ($statusCode -in @(429, 500, 502, 503, 504)) -or $isTransportError
 
-                if (($isInvalidStream -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
+                if (($isInvalidStream -or $isDceAssociationPending -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
                     $attempt++
-                    $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(30, [math]::Pow(2, $attempt)) }
+                    $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(45, [math]::Max(5, [math]::Pow(2, $attempt))) }
                     if ($isInvalidStream) {
                         Write-Host "InvalidStream - waiting for DCR propagation ($attempt/$maxAttempts)..." -ForegroundColor Yellow
+                    } elseif ($isDceAssociationPending) {
+                        Write-Host "DCE/DCR association is still propagating. Retrying in $delaySeconds s ($attempt/$maxAttempts)..." -ForegroundColor Yellow
                     } elseif ($isTransportError) {
                         Write-Host "Transport error: $transportMessage. Retrying in $delaySeconds s ($attempt/$maxAttempts)..." -ForegroundColor Yellow
                     } else {

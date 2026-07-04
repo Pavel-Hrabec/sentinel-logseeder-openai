@@ -344,7 +344,9 @@ DCR. The script prints a command you can use.
 If ingestion fails with a message like `data collection endpoint FQDN is not
 associated with the data collection rule`, rerun the same path with `Deploy and
 ingest` or `Deploy only`. The deployment step checks existing DCRs and updates
-them when they point to an old or different DCE.
+them when they point to an old or different DCE. Azure can take a few minutes
+to propagate that association, so ingestion retries this specific 403 before
+failing.
 
 If logs do not appear immediately, wait 5-10 minutes and rerun the KQL with a
 larger time window:
