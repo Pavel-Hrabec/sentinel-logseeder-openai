@@ -968,15 +968,18 @@ function Send-Records {
 
             $isInvalidStream = ($responseBody -and $responseBody -match "InvalidStream")
             $isDceAssociationPending = ($statusCode -eq 403 -and $responseBody -and $responseBody -match "not associated with the data collection rule")
+            $isRbacPropagationPending = ($statusCode -eq 403 -and $responseBody -and $responseBody -match "authentication token provided does not have access to ingest data")
             $isRetryable = ($statusCode -in @(429, 500, 502, 503, 504)) -or $isTransportError
 
-            if (($isInvalidStream -or $isDceAssociationPending -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
+            if (($isInvalidStream -or $isDceAssociationPending -or $isRbacPropagationPending -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
                 $attempt++
                 $delaySeconds = if ($retryAfterSeconds -and $retryAfterSeconds -gt 0) { $retryAfterSeconds } else { [math]::Min(45, [math]::Max(5, [math]::Pow(2, $attempt))) }
                 if ($isInvalidStream) {
                     Write-Host "InvalidStream - waiting for DCR propagation (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
                 } elseif ($isDceAssociationPending) {
                     Write-Host "DCE/DCR association is still propagating. Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
+                } elseif ($isRbacPropagationPending) {
+                    Write-Host "Monitoring Metrics Publisher role is still propagating. Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
                 } elseif ($isTransportError) {
                     Write-Host "Transport error: $transportMessage. Retrying in $delaySeconds s (attempt $attempt/$maxAttempts)..." -ForegroundColor Yellow
                 } else {

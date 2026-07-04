@@ -341,6 +341,11 @@ If role assignment fails during deployment, ask someone with Owner or User
 Access Administrator permissions to assign `Monitoring Metrics Publisher` on the
 DCR. The script prints a command you can use.
 
+If ingestion fails with `authentication token provided does not have access to
+ingest data`, the `Monitoring Metrics Publisher` role assignment may still be
+propagating. The ingestion step retries this specific 403, but if Azure still
+blocks it, wait a few minutes and use `Ingest only` for the same table/scenario.
+
 If ingestion fails with a message like `data collection endpoint FQDN is not
 associated with the data collection rule`, rerun the same path with `Deploy and
 ingest` or `Deploy only`. The deployment step checks existing DCRs and updates
