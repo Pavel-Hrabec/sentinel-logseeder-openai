@@ -5,12 +5,12 @@ Orchestrate multi-table attack scenario ingestion into Microsoft Sentinel.
 .DESCRIPTION
 Reads an attack scenario definition (JSON) that describes correlated events across
 multiple Log Analytics tables with a coherent timeline, shared actors, and realistic
-attack phases. Deploys infrastructure (DCE, shared DCR, custom tables) for each table and
+attack phases. Deploys infrastructure (DCE, DCR, custom tables) for each table and
 ingests time-correlated, entity-linked sample data.
 
 .REQUIREMENTS
 - Azure CLI (az) installed and authenticated via 'az login'.
-- 'Monitoring Metrics Publisher' RBAC role on the shared DCR for the signed-in user.
+- 'Monitoring Metrics Publisher' RBAC role on each DCR for the signed-in user.
 - The single-table ingestion script (Invoke-SampleDataIngestion.ps1) in the same directory.
 
 .PARAMETER ScenarioFile
@@ -23,7 +23,7 @@ Path to workspace.json. Default: config/workspace.json relative to project root.
 Path to entities.json. Default: config/entities.json relative to project root.
 
 .PARAMETER Deploy
-When specified, creates or reuses DCE, shared DCR, and custom table resources for all tables in the scenario.
+When specified, creates or reuses DCE, DCR, and custom table resources for all tables in the scenario.
 
 .PARAMETER Ingest
 When specified, generates correlated sample data and ingests it across all tables.

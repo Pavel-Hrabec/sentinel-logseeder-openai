@@ -85,8 +85,6 @@ Uses an existing schema from `schemas/` and calls:
 ```
 
 The default row count is intentionally small.
-Deployments use a shared DCR named `sampledata-shared`; each table adds or
-updates its own stream in that DCR.
 
 ### 3. Generate Product/Vendor Logs With AI
 
@@ -115,7 +113,8 @@ commands.
 - Prebuilt scenarios use the original upstream scenario size.
 - Default table generation is 25 rows.
 - The launcher asks for confirmation before billable ingestion.
-- The shared DCR reduces repeated RBAC propagation waits after the first deploy.
+- Each destination table gets its own DCR because this is the most reliable
+  pattern for custom Logs Ingestion API streams.
 - OpenAI is only called for custom generation and "other" requests.
 - Generated schemas are cached as files, so they can be reused without more
   OpenAI calls.
