@@ -40,7 +40,7 @@ request.
 The scripts create or reuse:
 
 - Data Collection Endpoint (DCE)
-- Data Collection Rule (DCR)
+- Shared Data Collection Rule (DCR), `sampledata-shared`
 - Supported Log Analytics tables
 - DCR deployment metadata in ignored `schemas/*.deploy.json` files
 
@@ -149,7 +149,7 @@ Most ingestion paths then ask for an action:
 | Action | What happens |
 |---|---|
 | Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. This can create Azure/Sentinel ingestion cost. |
-| Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
+| Deploy only | Creates/reuses DCE, the shared DCR, table resources, and deployment metadata, but sends no log data. |
 | Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
 | Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
 
@@ -182,7 +182,7 @@ What it does:
 - Converts abstract categories such as `Authentication`, `ProcessEvent`, and
   `NetworkSession` into supported ASIM destination tables.
 - Creates a runtime scenario file in `scenarios/*-openai-runtime.json`.
-- Deploys or reuses DCE/DCR/table resources.
+- Deploys or reuses DCE/shared DCR/table resources.
 - Ingests correlated synthetic events.
 - Prints KQL for Sentinel Logs.
 
@@ -206,7 +206,7 @@ Example use cases:
 
 - Generate 25 rows for `ASimAuthenticationEventLogs`.
 - Generate test rows for a custom `_CL` table.
-- Validate that a DCR and DCE are working.
+- Validate that the shared DCR and DCE are working.
 
 ## Example: Generate Product/Vendor Logs With AI
 
@@ -324,6 +324,9 @@ Generated local files are ignored by git:
 - Preview mode does not make Azure changes.
 - Deploy only creates/reuses Azure resources but does not ingest rows.
 - Deploy and ingest sends billable Log Analytics/Sentinel data.
+- The first deployment creates or updates the shared `sampledata-shared` DCR.
+- Later tables add streams to that shared DCR, so RBAC is reused instead of
+  starting from a new DCR every time.
 - Prebuilt scenarios use the original scenario row/event counts.
 - Single-table and custom AI paths default to low row counts.
 - Set workspace daily caps and retention appropriately for demos.

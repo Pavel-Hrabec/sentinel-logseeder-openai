@@ -4,7 +4,7 @@ Generate randomized sample data and ingest it into a Microsoft Sentinel / Log An
 workspace via the Azure Monitor Logs Ingestion API.
 
 .DESCRIPTION
-This script creates the required Azure infrastructure (DCE, DCR, custom table) and ingests
+This script creates the required Azure infrastructure (DCE, shared DCR, custom table) and ingests
 AI-generated sample data seeded with entities from entities.json. It supports both built-in
 (standard) and custom Log Analytics tables.
 
@@ -36,7 +36,7 @@ Path to the entities.json configuration file. Default: config/entities.json rela
 Path to workspace.json. Default: config/workspace.json relative to project root.
 
 .PARAMETER Deploy
-When specified, creates or reuses DCE, DCR, and custom table resources in Azure.
+When specified, creates or reuses DCE, shared DCR, and custom table resources in Azure.
 
 .PARAMETER Ingest
 When specified, generates sample data and ingests it via the Logs Ingestion API.
@@ -405,6 +405,57 @@ function New-DcrTemplate {
     }
 }
 
+function Merge-DcrTemplate {
+    param(
+        [Parameter(Mandatory = $true)]$ExistingDcr,
+        [Parameter(Mandatory = $true)][hashtable]$Template
+    )
+
+    $merged = @{
+        location   = $Template.location
+        kind       = $Template.kind
+        properties = @{
+            dataCollectionEndpointId = $Template.properties.dataCollectionEndpointId
+            streamDeclarations       = @{}
+            destinations             = $Template.properties.destinations
+            dataFlows                = @()
+        }
+    }
+
+    if ($ExistingDcr.properties.streamDeclarations) {
+        foreach ($prop in $ExistingDcr.properties.streamDeclarations.PSObject.Properties) {
+            $merged.properties.streamDeclarations[$prop.Name] = $prop.Value
+        }
+    }
+
+    foreach ($streamName in @($Template.properties.streamDeclarations.Keys)) {
+        $merged.properties.streamDeclarations[$streamName] = $Template.properties.streamDeclarations[$streamName]
+    }
+
+    $newStreamNames = @($Template.properties.streamDeclarations.Keys)
+    if ($ExistingDcr.properties.dataFlows) {
+        foreach ($flow in @($ExistingDcr.properties.dataFlows)) {
+            $flowStreams = @($flow.streams)
+            $replacedByNewFlow = $false
+            foreach ($streamName in $newStreamNames) {
+                if ($flowStreams -contains $streamName) {
+                    $replacedByNewFlow = $true
+                    break
+                }
+            }
+            if (-not $replacedByNewFlow) {
+                $merged.properties.dataFlows += ,$flow
+            }
+        }
+    }
+
+    foreach ($flow in @($Template.properties.dataFlows)) {
+        $merged.properties.dataFlows += ,$flow
+    }
+
+    return $merged
+}
+
 function Initialize-Dcr {
     param(
         [string]$DcrName,
@@ -423,10 +474,10 @@ function Initialize-Dcr {
         $existing = Invoke-ArmRest -Method "GET" -Uri $dcrUri
     } catch { }
 
-    $body = $Template | ConvertTo-Json -Depth 20 -Compress
-
     if ($existing) {
         $needsUpdate = $false
+        $mergedTemplate = Merge-DcrTemplate -ExistingDcr $existing -Template $Template
+        $desiredStreams = @($Template.properties.streamDeclarations.Keys)
         $desiredDceId = [string]$Template.properties.dataCollectionEndpointId
         $currentDceId = [string]$existing.properties.dataCollectionEndpointId
 
@@ -450,7 +501,7 @@ function Initialize-Dcr {
         if ($existing.properties.streamDeclarations) {
             $existingStreams = @($existing.properties.streamDeclarations.PSObject.Properties.Name)
         }
-        foreach ($streamName in @($Template.properties.streamDeclarations.Keys)) {
+        foreach ($streamName in $desiredStreams) {
             if ($existingStreams -notcontains $streamName) {
                 Write-Host "Existing DCR '$DcrName' is missing stream '$streamName'. Updating it." -ForegroundColor Yellow
                 $needsUpdate = $true
@@ -458,14 +509,19 @@ function Initialize-Dcr {
             }
         }
 
+        if (-not $needsUpdate) {
+            Write-Host "Ensuring shared DCR '$DcrName' has current stream definition: $($desiredStreams -join ', ')." -ForegroundColor Cyan
+            $needsUpdate = $true
+        }
+
         if ($needsUpdate) {
+            $body = $mergedTemplate | ConvertTo-Json -Depth 40 -Compress
             $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
             Write-Host "DCR '$DcrName' updated." -ForegroundColor Green
-        } else {
-            Write-Host "Reusing existing DCR '$DcrName'." -ForegroundColor Green
         }
     } else {
         Write-Host "Creating DCR '$DcrName'..." -ForegroundColor Cyan
+        $body = $Template | ConvertTo-Json -Depth 40 -Compress
         $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
         Write-Host "DCR '$DcrName' created." -ForegroundColor Green
     }
@@ -1097,7 +1153,7 @@ if ($Deploy) {
     }
 
     # 3. DCR
-    $dcrName = "sampledata-$($TableName -replace '_CL$', '' -replace '[^A-Za-z0-9-]', '-')"
+    $dcrName = "sampledata-shared"
     $dcrResult = New-DcrTemplate -TargetTableName $TableName -WorkspaceResourceId $ws.WorkspaceResourceId `
         -DceResourceId $dceId -Location $location -ColumnDefinitions $columnDefs -TransformKql $schemaTransformKql
     $dcrId = Initialize-Dcr -DcrName $dcrName -SubscriptionId $ws.SubscriptionId `

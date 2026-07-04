@@ -623,7 +623,7 @@ function Invoke-LogSeederScript {
 
 function Get-RunMode {
     $items = @(
-        [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, DCR, table resources, then ingest data."; Value = "deployIngest" },
+        [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, shared DCR, table resources, then ingest data."; Value = "deployIngest" },
         [pscustomobject]@{ Label = "Deploy only"; Description = "Prepare Azure resources but do not send log data."; Value = "deploy" },
         [pscustomobject]@{ Label = "Ingest only"; Description = "Use existing deployment info in schemas/*.deploy.json."; Value = "ingest" },
         [pscustomobject]@{ Label = "Preview command only"; Description = "Show the command without running Azure changes."; Value = "preview" }
