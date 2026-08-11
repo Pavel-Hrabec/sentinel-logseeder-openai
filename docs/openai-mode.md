@@ -76,6 +76,18 @@ The launcher writes a generated runtime scenario to `scenarios/*-openai-runtime.
 Those files are ignored by git. Prebuilt scenarios always use the original
 upstream row and event counts.
 
+Scenario actions include detection-rule creation. The launcher can create or
+update a Microsoft Sentinel scheduled analytics rule for the selected runtime
+scenario. The rule uses KQL generated from the scenario phase templates and has
+incident creation enabled.
+
+Useful actions:
+
+- `Deploy and ingest`: creates/reuses ingestion resources and sends scenario rows.
+- `Deploy, ingest, and create detection rule`: runs the full demo path and then creates the Sentinel rule.
+- `Create detection rule`: creates the Sentinel rule only, without sending logs.
+- `Preview command only`: prints the deploy-and-ingest command without Azure changes.
+
 ### 2. Ingest Sample Data Into A Table
 
 Uses an existing schema from `schemas/` and calls:

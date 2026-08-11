@@ -13,6 +13,7 @@ request.
 ## What This Does
 
 - Runs prebuilt attack scenarios into Microsoft Sentinel.
+- Creates Sentinel scheduled analytics rules for prebuilt scenarios.
 - Generates sample rows for existing supported tables.
 - Ingests JSON or CSV sample files.
 - Optionally uses OpenAI or Azure OpenAI to create reusable custom schemas.
@@ -137,7 +138,7 @@ get a numbered menu.
 
 | Option | What it does | Needs AI? | Good for |
 |---|---|---:|---|
-| Run prebuilt attack scenario | Lets you choose a scenario from `scenarios/`, maps it to supported ASIM tables, deploys resources, and optionally ingests correlated attack data. | No | First demo, Sentinel detections, training data |
+| Run prebuilt attack scenario | Lets you choose a scenario from `scenarios/`, maps it to supported ASIM tables, deploys resources, optionally ingests correlated attack data, and can create a Sentinel analytics rule for the scenario. | No | First demo, Sentinel detections, training data |
 | Ingest sample data into a table | Uses an existing schema from `schemas/` and generates rows for one table. | No | Quick table validation |
 | Generate product/vendor logs with AI | Uses OpenAI or Azure OpenAI to create a reusable schema, then optionally deploys and ingests sample rows. | Yes | New custom log source demos |
 | Ingest JSON/CSV sample file | Infers a schema from a local sample file and ingests generated rows using values from that file. | No | Turning real-looking samples into Sentinel test data |
@@ -149,6 +150,8 @@ Most ingestion paths then ask for an action:
 | Action | What happens |
 |---|---|
 | Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. This can create Azure/Sentinel ingestion cost. |
+| Deploy, ingest, and create detection rule | Runs the full demo path, then creates or updates a Sentinel scheduled analytics rule that creates incidents for matching scenario logs. |
+| Create detection rule | Creates or updates the Sentinel analytics rule only. It does not deploy ingestion resources or send logs. |
 | Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
 | Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
 | Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
@@ -169,7 +172,7 @@ Then choose:
 4. `Preview command only`
 
 Review the command. If it looks correct, run the same path again and choose
-`Deploy and ingest`.
+`Deploy, ingest, and create detection rule`.
 
 Prebuilt scenarios use the original upstream scenario size. The script shows a
 cost guard before any billable ingestion.
@@ -184,6 +187,7 @@ What it does:
 - Creates a runtime scenario file in `scenarios/*-openai-runtime.json`.
 - Deploys or reuses DCE/DCR/table resources.
 - Ingests correlated synthetic events.
+- Optionally creates a Sentinel scheduled analytics rule with incident creation enabled.
 - Prints KQL for Sentinel Logs.
 
 Example destination tables:
@@ -191,6 +195,11 @@ Example destination tables:
 - `ASimAuthenticationEventLogs`
 - `ASimNetworkSessionLogs`
 - `ASimProcessEventLogs`
+
+The detection rule is generated from the selected scenario's phase templates.
+For example, a brute-force scenario rule looks for the authentication,
+network-session, and process-event patterns described in that scenario rather
+than simply alerting on every row in those tables.
 
 ## Example: Ingest Sample Data Into A Table
 
@@ -303,6 +312,7 @@ Use supported ASIM tables or custom `_CL` tables for synthetic training data.
 | `setup.ps1` | Beginner setup and optional menu launcher |
 | `scripts/Start-LogSeederOpenAI.ps1` | Interactive menu entrypoint |
 | `scripts/LogSeeder.OpenAI.psm1` | Menu logic and OpenAI/Azure OpenAI integration |
+| `scripts/Invoke-ScenarioDetectionRule.ps1` | Creates or previews Sentinel scheduled analytics rules for generated runtime scenarios |
 | `scripts/Invoke-SampleDataIngestion.ps1` | Original single-table ingestion engine, with KQL verification output |
 | `scripts/Invoke-AttackScenarioIngestion.ps1` | Original multi-table scenario ingestion engine, with KQL verification output |
 | `schemas/` | Reusable table schema JSON files |
@@ -323,6 +333,7 @@ Generated local files are ignored by git:
 
 - Preview mode does not make Azure changes.
 - Deploy only creates/reuses Azure resources but does not ingest rows.
+- Create detection rule creates or updates a Sentinel analytics rule but does not ingest rows.
 - Deploy and ingest sends billable Log Analytics/Sentinel data.
 - Each table uses a dedicated DCR. This is more reliable for Logs Ingestion API
   propagation than updating one shared DCR with new custom streams.

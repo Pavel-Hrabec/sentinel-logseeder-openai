@@ -631,6 +631,36 @@ function Get-RunMode {
     return Read-MenuChoice -Title "Action" -Items $items -AllowBack
 }
 
+function Get-ScenarioRunMode {
+    $items = @(
+        [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, DCR, table resources, then ingest scenario data."; Value = "deployIngest" },
+        [pscustomobject]@{ Label = "Deploy, ingest, and create detection rule"; Description = "Run the full demo path and create a Sentinel incident-generating analytics rule."; Value = "deployIngestDetection" },
+        [pscustomobject]@{ Label = "Create detection rule"; Description = "Create/update a Sentinel scheduled analytics rule for this scenario without ingesting data."; Value = "detection" },
+        [pscustomobject]@{ Label = "Deploy only"; Description = "Prepare Azure resources but do not send log data."; Value = "deploy" },
+        [pscustomobject]@{ Label = "Ingest only"; Description = "Use existing deployment info in schemas/*.deploy.json."; Value = "ingest" },
+        [pscustomobject]@{ Label = "Preview command only"; Description = "Show the deploy-and-ingest command without running Azure changes."; Value = "preview" }
+    )
+    return Read-MenuChoice -Title "Action" -Items $items -AllowBack
+}
+
+function Invoke-ScenarioDetectionRule {
+    param(
+        [Parameter(Mandatory = $true)][string]$RuntimePath,
+        [Parameter(Mandatory = $true)][string]$WorkspaceConfig,
+        [switch]$PreviewOnly
+    )
+
+    $scriptPath = Join-Path $script:ModuleRoot "Invoke-ScenarioDetectionRule.ps1"
+    $args = @{
+        ScenarioFile = $RuntimePath
+        WorkspaceConfig = $WorkspaceConfig
+        LookbackHours = 6
+        Severity = "Medium"
+        PreviewOnly = [bool]$PreviewOnly
+    }
+    Invoke-LogSeederScript -ScriptPath $scriptPath -Arguments $args -PreviewOnly:$false
+}
+
 function Invoke-PrebuiltScenarioWorkflow {
     param(
         [string]$WorkspaceConfig,
@@ -657,13 +687,14 @@ function Invoke-PrebuiltScenarioWorkflow {
     $runtimePath = New-RuntimeScenario -Scenario $scenario -TableMap $map -SourcePath $scenarioChoice.Value
     Show-RuntimePlan -RuntimePath $runtimePath
 
-    $mode = Get-RunMode
+    $mode = Get-ScenarioRunMode
     if ($null -eq $mode) { return }
 
     $previewChoice = ($mode.Value -eq "preview")
     $runPreview = $PreviewOnly -or $previewChoice
-    $deploy = $previewChoice -or ($mode.Value -eq "deploy" -or $mode.Value -eq "deployIngest")
-    $ingest = $previewChoice -or ($mode.Value -eq "ingest" -or $mode.Value -eq "deployIngest")
+    $deploy = $previewChoice -or ($mode.Value -eq "deploy" -or $mode.Value -eq "deployIngest" -or $mode.Value -eq "deployIngestDetection")
+    $ingest = $previewChoice -or ($mode.Value -eq "ingest" -or $mode.Value -eq "deployIngest" -or $mode.Value -eq "deployIngestDetection")
+    $createDetection = ($mode.Value -eq "detection" -or $mode.Value -eq "deployIngestDetection")
 
     if ($ingest -and -not $runPreview) {
         Write-Host ""
@@ -671,16 +702,25 @@ function Invoke-PrebuiltScenarioWorkflow {
         if (-not (Read-YesNo -Prompt "Continue?" -DefaultYes $false)) { return }
     }
 
-    $scriptPath = Join-Path $script:ModuleRoot "Invoke-AttackScenarioIngestion.ps1"
-    $args = @{
-        ScenarioFile = $runtimePath
-        WorkspaceConfig = $WorkspaceConfig
-        EntitiesFile = $EntitiesFile
-        Deploy = $deploy
-        Ingest = $ingest
-        TimeWindowHours = 4
+    if ($deploy -or $ingest -or $previewChoice) {
+        $scriptPath = Join-Path $script:ModuleRoot "Invoke-AttackScenarioIngestion.ps1"
+        $args = @{
+            ScenarioFile = $runtimePath
+            WorkspaceConfig = $WorkspaceConfig
+            EntitiesFile = $EntitiesFile
+            Deploy = $deploy
+            Ingest = $ingest
+            TimeWindowHours = 4
+        }
+        Invoke-LogSeederScript -ScriptPath $scriptPath -Arguments $args -PreviewOnly:$runPreview
     }
-    Invoke-LogSeederScript -ScriptPath $scriptPath -Arguments $args -PreviewOnly:$runPreview
+
+    if ($createDetection) {
+        Write-Host ""
+        Write-Host "Detection rule guard: this will create or update a Sentinel analytics rule." -ForegroundColor Yellow
+        if (-not (Read-YesNo -Prompt "Continue?" -DefaultYes $true)) { return }
+        Invoke-ScenarioDetectionRule -RuntimePath $runtimePath -WorkspaceConfig $WorkspaceConfig -PreviewOnly:$PreviewOnly
+    }
 }
 
 function Get-CommonSchemaItems {
