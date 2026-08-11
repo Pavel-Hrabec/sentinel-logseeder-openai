@@ -19,6 +19,9 @@ Optional display name for the analytics rule.
 .PARAMETER LookbackHours
 How far back the scheduled rule should query. Default: 6 hours.
 
+.PARAMETER QueryFrequencyMinutes
+How often the scheduled rule should run. Default: 5 minutes.
+
 .PARAMETER Severity
 Sentinel alert severity. Default: Medium.
 
@@ -36,6 +39,9 @@ param(
 
     [ValidateRange(1, 168)]
     [int]$LookbackHours = 6,
+
+    [ValidateRange(5, 20160)]
+    [int]$QueryFrequencyMinutes = 5,
 
     [ValidateSet("Informational", "Low", "Medium", "High")]
     [string]$Severity = "Medium",
@@ -115,6 +121,13 @@ function ConvertTo-KqlString {
     return "'$text'"
 }
 
+function ConvertTo-KqlColumnNameString {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $text = $Value -replace "'", "''"
+    return "'$text'"
+}
+
 function Test-KqlTemplateField {
     param(
         [string]$Name,
@@ -122,7 +135,7 @@ function Test-KqlTemplateField {
     )
 
     if ([string]::IsNullOrWhiteSpace($Name)) { return $false }
-    if ($Name -in @("EventCount", "EventStartTime", "EventEndTime")) { return $false }
+    if ($Name -in @("EventCount", "EventStartTime", "EventEndTime", "EventProduct", "EventVendor", "EventSchema", "EventSchemaVersion")) { return $false }
     if ($null -eq $Value) { return $false }
     if ($Value -is [string] -and [string]::IsNullOrWhiteSpace($Value)) { return $false }
     if ($Value -is [string] -and $Value -match '^\{\{.+\}\}$') { return $false }
@@ -136,6 +149,8 @@ function ConvertTo-KqlCondition {
         [AllowNull()][object]$Value
     )
 
+    $stringColumn = "tostring(column_ifexists($(ConvertTo-KqlColumnNameString -Value $Name), ''))"
+
     if ($Value -is [System.Array]) {
         $items = @($Value | Where-Object {
             $null -ne $_ -and
@@ -144,18 +159,18 @@ function ConvertTo-KqlCondition {
         })
         if ($items.Count -eq 0) { return $null }
         $literals = @($items | ForEach-Object { ConvertTo-KqlString -Value $_ })
-        return ("{0} in~ ({1})" -f $Name, ($literals -join ", "))
+        return ("{0} in~ ({1})" -f $stringColumn, ($literals -join ", "))
     }
 
     if ($Value -is [int] -or $Value -is [long] -or $Value -is [double] -or $Value -is [decimal]) {
-        return ("{0} == {1}" -f $Name, $Value)
+        return ("toreal(column_ifexists({0}, real(null))) == {1}" -f (ConvertTo-KqlColumnNameString -Value $Name), $Value)
     }
 
     if ($Value -is [bool]) {
-        return ("{0} == {1}" -f $Name, ([string]$Value).ToLowerInvariant())
+        return ("tobool(column_ifexists({0}, bool(null))) == {1}" -f (ConvertTo-KqlColumnNameString -Value $Name), ([string]$Value).ToLowerInvariant())
     }
 
-    return ("{0} =~ {1}" -f $Name, (ConvertTo-KqlString -Value $Value))
+    return ("{0} =~ {1}" -f $stringColumn, (ConvertTo-KqlString -Value $Value))
 }
 
 function New-ScenarioDetectionQuery {
@@ -255,12 +270,12 @@ $body = [ordered]@{
         severity = $Severity
         enabled = $true
         query = $query
-        queryFrequency = "PT1H"
+        queryFrequency = "PT${QueryFrequencyMinutes}M"
         queryPeriod = "PT${LookbackHours}H"
         triggerOperator = "GreaterThan"
         triggerThreshold = 0
-        suppressionDuration = "PT1H"
-        suppressionEnabled = $false
+        suppressionDuration = "PT${LookbackHours}H"
+        suppressionEnabled = $true
         eventGroupingSettings = @{
             aggregationKind = "SingleAlert"
         }

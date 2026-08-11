@@ -655,6 +655,7 @@ function Invoke-ScenarioDetectionRule {
         ScenarioFile = $RuntimePath
         WorkspaceConfig = $WorkspaceConfig
         LookbackHours = 6
+        QueryFrequencyMinutes = 5
         Severity = "Medium"
         PreviewOnly = [bool]$PreviewOnly
     }

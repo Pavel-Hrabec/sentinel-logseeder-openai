@@ -201,6 +201,11 @@ For example, a brute-force scenario rule looks for the authentication,
 network-session, and process-event patterns described in that scenario rather
 than simply alerting on every row in those tables.
 
+Scenario detection rules run every 5 minutes, look back 6 hours by default, and
+create Microsoft Sentinel incidents when matching logs are found. Suppression is
+enabled for the lookback window to avoid repeated alert noise from the same demo
+data.
+
 ## Example: Ingest Sample Data Into A Table
 
 What it does:

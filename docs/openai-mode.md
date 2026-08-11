@@ -81,6 +81,10 @@ update a Microsoft Sentinel scheduled analytics rule for the selected runtime
 scenario. The rule uses KQL generated from the scenario phase templates and has
 incident creation enabled.
 
+By default, generated scenario rules run every 5 minutes, look back 6 hours, and
+suppress repeat alerts for the lookback window so the demo creates an incident
+without continuously adding alert noise for the same data.
+
 Useful actions:
 
 - `Deploy and ingest`: creates/reuses ingestion resources and sends scenario rows.
