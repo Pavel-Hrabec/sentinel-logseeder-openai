@@ -83,7 +83,9 @@ incident creation enabled.
 
 By default, generated scenario rules run every 5 minutes, look back 6 hours, and
 suppress repeat alerts for the lookback window so the demo creates an incident
-without continuously adding alert noise for the same data.
+without continuously adding alert noise for the same data. Rule and incident
+names use the scenario name directly, without adding the repository/tool name as
+a prefix.
 
 Useful actions:
 

@@ -71,6 +71,21 @@ function ConvertTo-SafeName {
     return $safe
 }
 
+function ConvertTo-ScenarioDisplayName {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $name = $Value -replace '-openai-runtime$', ''
+    $name = $name -replace '-runtime$', ''
+    $name = $name -replace '[_-]+', ' '
+    $name = $name.Trim()
+
+    if ([string]::IsNullOrWhiteSpace($name)) {
+        return "Synthetic security scenario"
+    }
+
+    return (Get-Culture).TextInfo.ToTitleCase($name.ToLowerInvariant())
+}
+
 function Get-ConfigValue {
     param(
         [Parameter(Mandatory = $true)]$Object,
@@ -215,7 +230,7 @@ function New-ScenarioDetectionQuery {
     $query += $unionLines
     $query += "| where TimeGenerated > ago(Lookback)"
     $query += "| where " + ($phasePredicates -join " or`n    ")
-    $query += "| extend LogSeederScenario = $(ConvertTo-KqlString -Value $Scenario.name)"
+    $query += "| extend ScenarioName = $(ConvertTo-KqlString -Value $Scenario.name)"
     $query += "| order by TimeGenerated desc"
     return ($query -join "`n")
 }
@@ -251,7 +266,7 @@ $scenario = Get-Content -Path $ScenarioFile -Raw | ConvertFrom-Json
 $workspace = Resolve-DetectionWorkspaceContext -ConfigPath $WorkspaceConfig
 
 $displayName = if ([string]::IsNullOrWhiteSpace($RuleName)) {
-    "LogSeeder - $($scenario.name)"
+    ConvertTo-ScenarioDisplayName -Value $scenario.name
 } else {
     $RuleName
 }
@@ -266,7 +281,7 @@ $body = [ordered]@{
     kind = "Scheduled"
     properties = [ordered]@{
         displayName = $displayName
-        description = "Creates a Sentinel incident when logs matching the LogSeeder scenario '$($scenario.name)' are found."
+        description = "Creates a Sentinel incident when logs matching the synthetic security scenario '$($scenario.name)' are found."
         severity = $Severity
         enabled = $true
         query = $query
@@ -292,12 +307,12 @@ $body = [ordered]@{
             }
         }
         customDetails = @{
-            LogSeederScenario = "LogSeederScenario"
+            ScenarioName = "ScenarioName"
             SourceTable = "LogTable"
         }
         alertDetailsOverride = @{
             alertDisplayNameFormat = "$displayName"
-            alertDescriptionFormat = "LogSeeder scenario '$($scenario.name)' generated matching events."
+            alertDescriptionFormat = "Synthetic security scenario '$($scenario.name)' generated matching events."
         }
     }
 }

@@ -204,7 +204,8 @@ than simply alerting on every row in those tables.
 Scenario detection rules run every 5 minutes, look back 6 hours by default, and
 create Microsoft Sentinel incidents when matching logs are found. Suppression is
 enabled for the lookback window to avoid repeated alert noise from the same demo
-data.
+data. Generated analytics rule and incident names use the scenario name directly,
+without adding the repository/tool name as a prefix.
 
 ## Example: Ingest Sample Data Into A Table
 
