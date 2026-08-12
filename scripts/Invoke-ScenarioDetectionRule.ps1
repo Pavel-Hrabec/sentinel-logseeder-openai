@@ -130,10 +130,11 @@ function Resolve-DetectionWorkspaceContext {
 function ConvertTo-KqlString {
     param([AllowNull()][object]$Value)
 
-    if ($null -eq $Value) { return "''" }
+    if ($null -eq $Value) { return "@''" }
     $text = [string]$Value
+    $text = $text -replace "(`r`n|`n|`r)", " "
     $text = $text -replace "'", "''"
-    return "'$text'"
+    return "@'$text'"
 }
 
 function ConvertTo-KqlColumnNameString {
