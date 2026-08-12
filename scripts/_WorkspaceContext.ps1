@@ -138,6 +138,37 @@ function Find-WorkspaceViaListFallback {
     return @($found)
 }
 
+function Find-WorkspaceViaDirectLookup {
+    param(
+        [string] $WorkspaceName,
+        [string] $SubscriptionId,
+        [string] $ResourceGroup
+    )
+
+    if (-not $WorkspaceName -or -not $SubscriptionId -or -not $ResourceGroup) {
+        return @()
+    }
+
+    $result = Invoke-AzCommandJson -Arguments @(
+        'monitor', 'log-analytics', 'workspace', 'show',
+        '--workspace-name', $WorkspaceName,
+        '--resource-group', $ResourceGroup,
+        '--subscription', $SubscriptionId
+    )
+    if (-not $result.Success -or -not $result.Data) { return @() }
+
+    $w = $result.Data
+    return @([pscustomobject]@{
+        id             = $w.id
+        name           = $w.name
+        resourceGroup  = $ResourceGroup
+        subscriptionId = $SubscriptionId
+        tenantId       = $null
+        customerId     = $w.customerId
+        location       = $w.location
+    })
+}
+
 function Resolve-WorkspaceContext {
     <#
     .SYNOPSIS
@@ -173,15 +204,18 @@ function Resolve-WorkspaceContext {
         Write-Host "Resolving workspace coordinates from Azure CLI context..." -ForegroundColor DarkGray
 
         $matched = @()
-        try {
-            $matched = Find-WorkspaceViaResourceGraph -WorkspaceName $workspaceName -WorkspaceCustomerId $workspaceId -SubscriptionId $subscriptionId -ResourceGroup $resourceGroup
-        } catch {
-            if ($_.Exception.Message -ne 'EXT_NOT_INSTALLED') {
-                Write-Host "  Resource Graph lookup failed: $($_.Exception.Message)" -ForegroundColor Yellow
-            } else {
-                Write-Host "  (Tip: install 'az extension add --name resource-graph' for faster lookups.)" -ForegroundColor DarkGray
+        $matched = Find-WorkspaceViaDirectLookup -WorkspaceName $workspaceName -SubscriptionId $subscriptionId -ResourceGroup $resourceGroup
+        if (-not $matched -or $matched.Count -eq 0) {
+            try {
+                $matched = Find-WorkspaceViaResourceGraph -WorkspaceName $workspaceName -WorkspaceCustomerId $workspaceId -SubscriptionId $subscriptionId -ResourceGroup $resourceGroup
+            } catch {
+                if ($_.Exception.Message -ne 'EXT_NOT_INSTALLED') {
+                    Write-Host "  Resource Graph lookup failed: $($_.Exception.Message)" -ForegroundColor Yellow
+                } else {
+                    Write-Host "  (Tip: install 'az extension add --name resource-graph' for faster lookups.)" -ForegroundColor DarkGray
+                }
+                $matched = Find-WorkspaceViaListFallback -WorkspaceName $workspaceName -WorkspaceCustomerId $workspaceId -SubscriptionId $subscriptionId -ResourceGroup $resourceGroup
             }
-            $matched = Find-WorkspaceViaListFallback -WorkspaceName $workspaceName -WorkspaceCustomerId $workspaceId -SubscriptionId $subscriptionId -ResourceGroup $resourceGroup
         }
 
         if (-not $matched -or $matched.Count -eq 0) {

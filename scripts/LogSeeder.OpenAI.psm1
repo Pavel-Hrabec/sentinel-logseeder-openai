@@ -615,6 +615,9 @@ function Invoke-LogSeederScript {
     $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
     if ($pwsh) {
         & $pwsh.Source -NoProfile -ExecutionPolicy Bypass -File $ScriptPath @nativeArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "Command failed with exit code $LASTEXITCODE`: $commandText"
+        }
     } else {
         Write-Host "PowerShell 7 (pwsh) was not found. Falling back to the current PowerShell host." -ForegroundColor Yellow
         & $ScriptPath @Arguments
