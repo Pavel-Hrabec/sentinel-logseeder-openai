@@ -82,17 +82,17 @@ scenario. The rule uses KQL generated from the scenario phase templates and has
 incident creation enabled.
 
 By default, generated scenario rules run every 5 minutes and look back 6 hours.
-Suppression is enabled and incident grouping is disabled. The full demo action
-creates a fresh run-specific rule resource ID and removes older demo rules for
-the same scenario, so repeat runs can create a new incident without repeatedly
-creating incidents every 5 minutes while matching logs remain in the lookback
-window. Rule and incident names use the scenario name directly, without adding
-the repository/tool name as a prefix.
+Suppression is enabled and incident grouping is disabled. When the user answers
+`y` to the analytics-rule prompt after `Deploy and ingest`, the launcher creates
+a fresh run-specific rule resource ID and removes older demo rules for the same
+scenario. Repeat runs can create a new incident without repeatedly creating
+incidents every 5 minutes while matching logs remain in the lookback window.
+Rule and incident names use the scenario name directly, without adding the
+repository/tool name as a prefix.
 
 Useful actions:
 
-- `Deploy and ingest`: creates/reuses ingestion resources and sends scenario rows.
-- `Deploy, ingest, and create detection rule`: runs the full demo path and then creates a fresh run-specific Sentinel rule.
+- `Deploy and ingest`: creates/reuses ingestion resources, sends scenario rows, and asks whether to create an incident-generating Sentinel rule.
 - `Create detection rule`: creates or updates the stable Sentinel rule only, without sending logs.
 - `Preview command only`: prints the deploy-and-ingest command without Azure changes.
 

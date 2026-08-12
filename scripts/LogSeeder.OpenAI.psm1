@@ -637,7 +637,6 @@ function Get-RunMode {
 function Get-ScenarioRunMode {
     $items = @(
         [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, DCR, table resources, then ingest scenario data."; Value = "deployIngest" },
-        [pscustomobject]@{ Label = "Deploy, ingest, and create detection rule"; Description = "Run the full demo path and create a Sentinel incident-generating analytics rule."; Value = "deployIngestDetection" },
         [pscustomobject]@{ Label = "Create detection rule"; Description = "Create/update a Sentinel scheduled analytics rule for this scenario without ingesting data."; Value = "detection" },
         [pscustomobject]@{ Label = "Deploy only"; Description = "Prepare Azure resources but do not send log data."; Value = "deploy" },
         [pscustomobject]@{ Label = "Ingest only"; Description = "Use existing deployment info in schemas/*.deploy.json."; Value = "ingest" },
@@ -698,9 +697,18 @@ function Invoke-PrebuiltScenarioWorkflow {
 
     $previewChoice = ($mode.Value -eq "preview")
     $runPreview = $PreviewOnly -or $previewChoice
-    $deploy = $previewChoice -or ($mode.Value -eq "deploy" -or $mode.Value -eq "deployIngest" -or $mode.Value -eq "deployIngestDetection")
-    $ingest = $previewChoice -or ($mode.Value -eq "ingest" -or $mode.Value -eq "deployIngest" -or $mode.Value -eq "deployIngestDetection")
-    $createDetection = ($mode.Value -eq "detection" -or $mode.Value -eq "deployIngestDetection")
+    $deploy = $previewChoice -or ($mode.Value -eq "deploy" -or $mode.Value -eq "deployIngest")
+    $ingest = $previewChoice -or ($mode.Value -eq "ingest" -or $mode.Value -eq "deployIngest")
+    $createDetection = ($mode.Value -eq "detection")
+    $freshDetection = $false
+
+    if (($mode.Value -eq "deployIngest" -or $previewChoice) -and -not $createDetection) {
+        Write-Host ""
+        Write-Host "Sentinel analytics rule" -ForegroundColor Cyan
+        Write-Host "The rule will create a Sentinel incident when the generated logs match the scenario." -ForegroundColor Gray
+        $createDetection = Read-YesNo -Prompt "Create analytics rule and incident after ingestion?" -DefaultYes $true
+        $freshDetection = $createDetection -and ($mode.Value -eq "deployIngest" -or $previewChoice)
+    }
 
     if ($ingest -and -not $runPreview) {
         Write-Host ""
@@ -725,7 +733,7 @@ function Invoke-PrebuiltScenarioWorkflow {
         Write-Host ""
         Write-Host "Detection rule guard: this will create or update a Sentinel analytics rule." -ForegroundColor Yellow
         if (-not (Read-YesNo -Prompt "Continue?" -DefaultYes $true)) { return }
-        Invoke-ScenarioDetectionRule -RuntimePath $runtimePath -WorkspaceConfig $WorkspaceConfig -FreshDemoRun:($mode.Value -eq "deployIngestDetection") -PreviewOnly:$PreviewOnly
+        Invoke-ScenarioDetectionRule -RuntimePath $runtimePath -WorkspaceConfig $WorkspaceConfig -FreshDemoRun:$freshDetection -PreviewOnly:($PreviewOnly -or $previewChoice)
     }
 }
 

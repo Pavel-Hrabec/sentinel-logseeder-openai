@@ -149,8 +149,7 @@ Most ingestion paths then ask for an action:
 
 | Action | What happens |
 |---|---|
-| Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. This can create Azure/Sentinel ingestion cost. |
-| Deploy, ingest, and create detection rule | Runs the full demo path, then creates a fresh run-specific Sentinel scheduled analytics rule that creates an incident for matching scenario logs. |
+| Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. The menu asks whether to create an incident-generating analytics rule as part of this run. This can create Azure/Sentinel ingestion cost. |
 | Create detection rule | Creates or updates the stable Sentinel analytics rule only. It does not deploy ingestion resources or send logs. |
 | Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
 | Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
@@ -172,7 +171,8 @@ Then choose:
 4. `Preview command only`
 
 Review the command. If it looks correct, run the same path again and choose
-`Deploy, ingest, and create detection rule`.
+`Deploy and ingest`. When the menu asks `Create analytics rule and incident
+after ingestion?`, answer `y`.
 
 Prebuilt scenarios use the original upstream scenario size. The script shows a
 cost guard before any billable ingestion.
@@ -194,9 +194,10 @@ Then choose:
 1. `Run prebuilt attack scenario`
 2. Pick a built-in scenario, for example `brute-force-lateral-movement`
 3. `Use ASIM defaults`
-4. `Deploy, ingest, and create detection rule`
-5. Confirm the billable ingestion guard
-6. Confirm the detection rule guard
+4. `Deploy and ingest`
+5. Answer `y` when asked `Create analytics rule and incident after ingestion?`
+6. Confirm the billable ingestion guard
+7. Confirm the detection rule guard
 
 The launcher then performs these steps in order:
 
@@ -213,12 +214,12 @@ The menu waits for the ingestion script to finish before creating the detection
 rule. If deployment or ingestion fails, the menu stops instead of continuing
 with a partial run.
 
-For repeat demos, the full `Deploy, ingest, and create detection rule` path uses
-a run-specific rule resource ID and removes older enabled demo rules for the
-same scenario. The visible rule and incident names still use the scenario name.
-Suppression is enabled and incident grouping is disabled, so a fresh run can
-create a new incident without repeatedly creating incidents every 5 minutes
-while the logs remain in the 6-hour lookback window.
+For repeat demos, answering `y` to the analytics-rule prompt after `Deploy and
+ingest` uses a run-specific rule resource ID and removes older enabled demo
+rules for the same scenario. The visible rule and incident names still use the
+scenario name. Suppression is enabled and incident grouping is disabled, so a
+fresh run can create a new incident without repeatedly creating incidents every
+5 minutes while the logs remain in the 6-hour lookback window.
 
 The workspace resolver first uses direct lookup when `workspaceName`,
 `subscriptionId`, and `resourceGroup` are present in `config/workspace.json`.
