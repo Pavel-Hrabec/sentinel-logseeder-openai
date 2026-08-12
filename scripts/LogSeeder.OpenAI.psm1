@@ -650,6 +650,7 @@ function Invoke-ScenarioDetectionRule {
     param(
         [Parameter(Mandatory = $true)][string]$RuntimePath,
         [Parameter(Mandatory = $true)][string]$WorkspaceConfig,
+        [switch]$FreshDemoRun,
         [switch]$PreviewOnly
     )
 
@@ -660,6 +661,7 @@ function Invoke-ScenarioDetectionRule {
         LookbackHours = 6
         QueryFrequencyMinutes = 5
         Severity = "Medium"
+        FreshDemoRun = [bool]$FreshDemoRun
         PreviewOnly = [bool]$PreviewOnly
     }
     Invoke-LogSeederScript -ScriptPath $scriptPath -Arguments $args -PreviewOnly:$false
@@ -723,7 +725,7 @@ function Invoke-PrebuiltScenarioWorkflow {
         Write-Host ""
         Write-Host "Detection rule guard: this will create or update a Sentinel analytics rule." -ForegroundColor Yellow
         if (-not (Read-YesNo -Prompt "Continue?" -DefaultYes $true)) { return }
-        Invoke-ScenarioDetectionRule -RuntimePath $runtimePath -WorkspaceConfig $WorkspaceConfig -PreviewOnly:$PreviewOnly
+        Invoke-ScenarioDetectionRule -RuntimePath $runtimePath -WorkspaceConfig $WorkspaceConfig -FreshDemoRun:($mode.Value -eq "deployIngestDetection") -PreviewOnly:$PreviewOnly
     }
 }
 

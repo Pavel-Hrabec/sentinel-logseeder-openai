@@ -150,8 +150,8 @@ Most ingestion paths then ask for an action:
 | Action | What happens |
 |---|---|
 | Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. This can create Azure/Sentinel ingestion cost. |
-| Deploy, ingest, and create detection rule | Runs the full demo path, then creates or updates a Sentinel scheduled analytics rule that creates incidents for matching scenario logs. |
-| Create detection rule | Creates or updates the Sentinel analytics rule only. It does not deploy ingestion resources or send logs. |
+| Deploy, ingest, and create detection rule | Runs the full demo path, then creates a fresh run-specific Sentinel scheduled analytics rule that creates an incident for matching scenario logs. |
+| Create detection rule | Creates or updates the stable Sentinel analytics rule only. It does not deploy ingestion resources or send logs. |
 | Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
 | Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
 | Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
@@ -205,13 +205,20 @@ The launcher then performs these steps in order:
 3. Writes a local runtime file in `scenarios/*-openai-runtime.json`.
 4. Creates or reuses the DCE, DCRs, and destination tables.
 5. Ingests the scenario rows into Log Analytics / Sentinel.
-6. Creates or updates a Microsoft Sentinel scheduled analytics rule.
+6. Creates a fresh run-specific Microsoft Sentinel scheduled analytics rule for that scenario.
 7. The analytics rule creates an incident when the generated KQL matches the
    ingested scenario logs.
 
 The menu waits for the ingestion script to finish before creating the detection
 rule. If deployment or ingestion fails, the menu stops instead of continuing
 with a partial run.
+
+For repeat demos, the full `Deploy, ingest, and create detection rule` path uses
+a run-specific rule resource ID and removes older enabled demo rules for the
+same scenario. The visible rule and incident names still use the scenario name.
+Suppression is enabled and incident grouping is disabled, so a fresh run can
+create a new incident without repeatedly creating incidents every 5 minutes
+while the logs remain in the 6-hour lookback window.
 
 The workspace resolver first uses direct lookup when `workspaceName`,
 `subscriptionId`, and `resourceGroup` are present in `config/workspace.json`.
@@ -228,6 +235,9 @@ The full path has been tested with these built-in scenarios:
 
 Generated analytics rule and incident names use the scenario name directly.
 They do not add `LogSeeder` as a prefix.
+The underlying Azure resource name adds a hidden `Demo` suffix. Full demo runs
+also append a timestamp to that resource name so Sentinel treats each run as a
+fresh rule and can create a fresh incident.
 
 ## Example: Run A Prebuilt Scenario
 
@@ -255,8 +265,10 @@ than simply alerting on every row in those tables.
 
 Scenario detection rules run every 5 minutes, look back 6 hours by default, and
 create Microsoft Sentinel incidents when matching logs are found. Suppression is
-enabled for the lookback window to avoid repeated alert noise from the same demo
-data. Generated analytics rule and incident names use the scenario name directly,
+enabled and incident grouping is disabled. Full demo runs create a fresh
+run-specific rule resource ID and clean up older demo rules for the same
+scenario, so repeat demos are visible without generating an incident storm.
+Generated analytics rule and incident names use the scenario name directly,
 without adding the repository/tool name as a prefix.
 
 ## Example: Ingest Sample Data Into A Table
@@ -346,7 +358,7 @@ To verify the built-in scenario analytics rules, use Azure CLI:
 ```powershell
 az rest --method get `
   --uri "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>/providers/Microsoft.SecurityInsights/alertRules?api-version=2025-09-01" `
-  --query "value[?properties.displayName=='Brute Force Lateral Movement' || properties.displayName=='Credential Theft Privesc' || properties.displayName=='Data Exfiltration' || properties.displayName=='Ransomware Deployment'].properties.{displayName:displayName,enabled:enabled,queryFrequency:queryFrequency,queryPeriod:queryPeriod,suppressionEnabled:suppressionEnabled,createIncident:incidentConfiguration.createIncident,severity:severity}" `
+  --query "value[?properties.displayName=='Brute Force Lateral Movement' || properties.displayName=='Credential Theft Privesc' || properties.displayName=='Data Exfiltration' || properties.displayName=='Ransomware Deployment'].properties.{displayName:displayName,enabled:enabled,queryFrequency:queryFrequency,queryPeriod:queryPeriod,suppressionEnabled:suppressionEnabled,createIncident:incidentConfiguration.createIncident,grouping:incidentConfiguration.groupingConfiguration.enabled,severity:severity}" `
   -o table
 ```
 
@@ -358,6 +370,7 @@ QueryFrequency=PT5M
 QueryPeriod=PT6H
 SuppressionEnabled=True
 CreateIncident=True
+Grouping=False
 Severity=Medium
 ```
 

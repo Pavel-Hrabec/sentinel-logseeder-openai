@@ -25,6 +25,11 @@ How often the scheduled rule should run. Default: 5 minutes.
 .PARAMETER Severity
 Sentinel alert severity. Default: Medium.
 
+.PARAMETER FreshDemoRun
+Creates a run-specific analytics rule ID and removes older rules with the same
+display name. Use this after ingesting scenario data so each demo run can
+create one fresh incident without leaving duplicate active rules.
+
 .PARAMETER PreviewOnly
 Prints the REST target and JSON body without creating or updating the rule.
 #>
@@ -45,6 +50,8 @@ param(
 
     [ValidateSet("Informational", "Low", "Medium", "High")]
     [string]$Severity = "Medium",
+
+    [switch]$FreshDemoRun,
 
     [switch]$PreviewOnly
 )
@@ -69,6 +76,33 @@ function ConvertTo-SafeName {
     if ([string]::IsNullOrWhiteSpace($safe)) { return "logseeder-scenario" }
     if ($safe.Length -gt 64) { return $safe.Substring(0, 64).Trim('-') }
     return $safe
+}
+
+function ConvertTo-RuleResourceName {
+    param([Parameter(Mandatory = $true)][string]$DisplayName)
+
+    return ConvertTo-SafeName -Value "$DisplayName Demo"
+}
+
+function ConvertTo-RunStamp {
+    param([AllowNull()][object]$Scenario)
+
+    $stamp = $null
+    if ($Scenario -and $Scenario.PSObject.Properties["generatedAtUtc"]) {
+        if ($Scenario.generatedAtUtc -is [datetime]) {
+            $stamp = $Scenario.generatedAtUtc.ToUniversalTime()
+        } else {
+            $parsed = [datetime]::MinValue
+            if ([datetime]::TryParse([string]$Scenario.generatedAtUtc, [ref]$parsed)) {
+                $stamp = $parsed.ToUniversalTime()
+            }
+        }
+    }
+    if ($null -eq $stamp) {
+        $stamp = (Get-Date).ToUniversalTime()
+    }
+
+    return ConvertTo-SafeName -Value $stamp.ToString("yyyyMMddTHHmmssZ", [System.Globalization.CultureInfo]::InvariantCulture)
 }
 
 function ConvertTo-ScenarioDisplayName {
@@ -255,6 +289,37 @@ function Get-ScenarioTactics {
     return @($mapped | Sort-Object -Unique)
 }
 
+function Remove-ExistingScenarioRules {
+    param(
+        [Parameter(Mandatory = $true)][string]$ListUri,
+        [Parameter(Mandatory = $true)][string]$DisplayName,
+        [Parameter(Mandatory = $true)][string]$BaseRuleId,
+        [Parameter(Mandatory = $true)][string]$KeepRuleId
+    )
+
+    Write-Host ""
+    Write-Host "Removing older enabled demo rules for this scenario..." -ForegroundColor Cyan
+    $listJson = az rest --method get --uri $ListUri 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $listJson | Write-Host
+        throw "az rest failed while listing existing Sentinel analytics rules."
+    }
+
+    $rules = ($listJson | Out-String) | ConvertFrom-Json
+    foreach ($rule in @($rules.value)) {
+        if ($rule.name -eq $KeepRuleId) { continue }
+        if ($rule.name -notlike "$BaseRuleId*") { continue }
+        if ($rule.properties.displayName -ne $DisplayName) { continue }
+
+        Write-Host "  Deleting old rule resource '$($rule.name)'." -ForegroundColor DarkCyan
+        $deleteOutput = az rest --method delete --uri "$($rule.id)?api-version=2025-09-01" 2>&1
+        if ($LASTEXITCODE -ne 0 -and (($deleteOutput | Out-String) -notmatch "NotFound")) {
+            $deleteOutput | Write-Host
+            throw "az rest failed while deleting old Sentinel analytics rule '$($rule.name)'."
+        }
+    }
+}
+
 if (-not (Test-Path $ScenarioFile)) {
     throw "Scenario file not found: $ScenarioFile"
 }
@@ -272,10 +337,16 @@ $displayName = if ([string]::IsNullOrWhiteSpace($RuleName)) {
     $RuleName
 }
 
-$ruleId = ConvertTo-SafeName -Value $displayName
+$baseRuleId = ConvertTo-RuleResourceName -DisplayName $displayName
+$ruleId = if ($FreshDemoRun) {
+    ConvertTo-SafeName -Value "$baseRuleId $(ConvertTo-RunStamp -Scenario $scenario)"
+} else {
+    $baseRuleId
+}
 $query = New-ScenarioDetectionQuery -Scenario $scenario -LookbackHours $LookbackHours
 $tactics = @(Get-ScenarioTactics -Scenario $scenario)
 $apiVersion = "2025-09-01"
+$listUri = "https://management.azure.com/subscriptions/$($workspace.SubscriptionId)/resourceGroups/$($workspace.ResourceGroup)/providers/Microsoft.OperationalInsights/workspaces/$($workspace.WorkspaceName)/providers/Microsoft.SecurityInsights/alertRules?api-version=$apiVersion"
 $uri = "https://management.azure.com/subscriptions/$($workspace.SubscriptionId)/resourceGroups/$($workspace.ResourceGroup)/providers/Microsoft.OperationalInsights/workspaces/$($workspace.WorkspaceName)/providers/Microsoft.SecurityInsights/alertRules/${ruleId}?api-version=$apiVersion"
 
 $body = [ordered]@{
@@ -298,7 +369,7 @@ $body = [ordered]@{
         incidentConfiguration = @{
             createIncident = $true
             groupingConfiguration = @{
-                enabled = $true
+                enabled = $false
                 reopenClosedIncident = $false
                 lookbackDuration = "PT${LookbackHours}H"
                 matchingMethod = "AnyAlert"
@@ -343,6 +414,10 @@ if ($PreviewOnly) {
     Write-Host "Request body:" -ForegroundColor Cyan
     Write-Host $jsonBody -ForegroundColor DarkCyan
     return
+}
+
+if ($FreshDemoRun) {
+    Remove-ExistingScenarioRules -ListUri $listUri -DisplayName $displayName -BaseRuleId $baseRuleId -KeepRuleId $ruleId
 }
 
 $tempFile = [System.IO.Path]::GetTempFileName()

@@ -81,17 +81,19 @@ update a Microsoft Sentinel scheduled analytics rule for the selected runtime
 scenario. The rule uses KQL generated from the scenario phase templates and has
 incident creation enabled.
 
-By default, generated scenario rules run every 5 minutes, look back 6 hours, and
-suppress repeat alerts for the lookback window so the demo creates an incident
-without continuously adding alert noise for the same data. Rule and incident
-names use the scenario name directly, without adding the repository/tool name as
-a prefix.
+By default, generated scenario rules run every 5 minutes and look back 6 hours.
+Suppression is enabled and incident grouping is disabled. The full demo action
+creates a fresh run-specific rule resource ID and removes older demo rules for
+the same scenario, so repeat runs can create a new incident without repeatedly
+creating incidents every 5 minutes while matching logs remain in the lookback
+window. Rule and incident names use the scenario name directly, without adding
+the repository/tool name as a prefix.
 
 Useful actions:
 
 - `Deploy and ingest`: creates/reuses ingestion resources and sends scenario rows.
-- `Deploy, ingest, and create detection rule`: runs the full demo path and then creates the Sentinel rule.
-- `Create detection rule`: creates the Sentinel rule only, without sending logs.
+- `Deploy, ingest, and create detection rule`: runs the full demo path and then creates a fresh run-specific Sentinel rule.
+- `Create detection rule`: creates or updates the stable Sentinel rule only, without sending logs.
 - `Preview command only`: prints the deploy-and-ingest command without Azure changes.
 
 ### 2. Ingest Sample Data Into A Table
