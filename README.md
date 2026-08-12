@@ -177,6 +177,58 @@ Review the command. If it looks correct, run the same path again and choose
 Prebuilt scenarios use the original upstream scenario size. The script shows a
 cost guard before any billable ingestion.
 
+## How The Current Version Works
+
+The main tested path is the prebuilt scenario workflow. It is designed so a
+beginner can choose numbered options and still get a complete Sentinel demo:
+synthetic logs, an analytics rule, and a Sentinel incident.
+
+Run:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\Start-LogSeederOpenAI.ps1
+```
+
+Then choose:
+
+1. `Run prebuilt attack scenario`
+2. Pick a built-in scenario, for example `brute-force-lateral-movement`
+3. `Use ASIM defaults`
+4. `Deploy, ingest, and create detection rule`
+5. Confirm the billable ingestion guard
+6. Confirm the detection rule guard
+
+The launcher then performs these steps in order:
+
+1. Reads the selected scenario from `scenarios/*.json`.
+2. Maps scenario categories to supported ASIM tables.
+3. Writes a local runtime file in `scenarios/*-openai-runtime.json`.
+4. Creates or reuses the DCE, DCRs, and destination tables.
+5. Ingests the scenario rows into Log Analytics / Sentinel.
+6. Creates or updates a Microsoft Sentinel scheduled analytics rule.
+7. The analytics rule creates an incident when the generated KQL matches the
+   ingested scenario logs.
+
+The menu waits for the ingestion script to finish before creating the detection
+rule. If deployment or ingestion fails, the menu stops instead of continuing
+with a partial run.
+
+The workspace resolver first uses direct lookup when `workspaceName`,
+`subscriptionId`, and `resourceGroup` are present in `config/workspace.json`.
+This avoids broad subscription discovery problems in beginner environments.
+
+The full path has been tested with these built-in scenarios:
+
+| Scenario | Rule / incident name | Default tables |
+|---|---|---|
+| `brute-force-lateral-movement` | `Brute Force Lateral Movement` | `ASimAuthenticationEventLogs`, `ASimNetworkSessionLogs`, `ASimProcessEventLogs` |
+| `credential-theft-privesc` | `Credential Theft Privesc` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimUserManagementActivityLogs` |
+| `data-exfiltration` | `Data Exfiltration` | `ASimAuditEventLogs`, `ASimFileEventLogs`, `ASimNetworkSessionLogs`, `ASimDnsActivityLogs` |
+| `ransomware-deployment` | `Ransomware Deployment` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimFileEventLogs`, `ASimRegistryEventLogs` |
+
+Generated analytics rule and incident names use the scenario name directly.
+They do not add `LogSeeder` as a prefix.
+
 ## Example: Run A Prebuilt Scenario
 
 What it does:
@@ -287,6 +339,58 @@ For a single table, use:
 
 Logs can take 5-10 minutes to appear after ingestion.
 
+## Verify Analytics Rules And Incidents
+
+To verify the built-in scenario analytics rules, use Azure CLI:
+
+```powershell
+az rest --method get `
+  --uri "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>/providers/Microsoft.SecurityInsights/alertRules?api-version=2025-09-01" `
+  --query "value[?properties.displayName=='Brute Force Lateral Movement' || properties.displayName=='Credential Theft Privesc' || properties.displayName=='Data Exfiltration' || properties.displayName=='Ransomware Deployment'].properties.{displayName:displayName,enabled:enabled,queryFrequency:queryFrequency,queryPeriod:queryPeriod,suppressionEnabled:suppressionEnabled,createIncident:incidentConfiguration.createIncident,severity:severity}" `
+  -o table
+```
+
+Expected rule settings:
+
+```text
+Enabled=True
+QueryFrequency=PT5M
+QueryPeriod=PT6H
+SuppressionEnabled=True
+CreateIncident=True
+Severity=Medium
+```
+
+To verify incidents in Sentinel Logs:
+
+```kql
+SecurityIncident
+| where TimeGenerated > ago(24h)
+| where Title in~ (
+    "Brute Force Lateral Movement",
+    "Credential Theft Privesc",
+    "Data Exfiltration",
+    "Ransomware Deployment"
+)
+| project TimeGenerated, IncidentNumber, Title, Severity, Status
+| order by TimeGenerated desc
+```
+
+To verify alerts:
+
+```kql
+SecurityAlert
+| where TimeGenerated > ago(24h)
+| where AlertName in~ (
+    "Brute Force Lateral Movement",
+    "Credential Theft Privesc",
+    "Data Exfiltration",
+    "Ransomware Deployment"
+)
+| project TimeGenerated, AlertName, AlertSeverity, ProviderName, SystemAlertId
+| order by TimeGenerated desc
+```
+
 ## Supported Destinations
 
 The Azure Monitor Logs Ingestion API supports custom `_CL` tables and a limited
@@ -355,6 +459,19 @@ If Azure CLI is not signed in:
 az login
 az account show
 ```
+
+Make sure Azure CLI is using the tenant and subscription that contain the target
+workspace:
+
+```powershell
+az account list -o table
+az account set --subscription "<subscription-name-or-id>"
+az account show
+```
+
+This matters because Logs Ingestion API uses the current Azure CLI token. The
+signed-in principal must have `Monitoring Metrics Publisher` on each DCR used by
+the scenario.
 
 If role assignment fails during deployment, ask someone with Owner or User
 Access Administrator permissions to assign `Monitoring Metrics Publisher` on the
