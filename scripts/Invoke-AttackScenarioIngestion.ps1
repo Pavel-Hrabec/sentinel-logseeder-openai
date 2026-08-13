@@ -94,6 +94,10 @@ if (-not (Test-Path $ScenarioFile)) {
 }
 
 $scenario = Get-Content -Path $ScenarioFile -Raw | ConvertFrom-Json
+$scenarioRunId = $null
+if ($scenario.PSObject.Properties['runId'] -and -not [string]::IsNullOrWhiteSpace($scenario.runId)) {
+    $scenarioRunId = [string]$scenario.runId
+}
 Write-Host "`n========================================" -ForegroundColor Magenta
 Write-Host " Attack Scenario: $($scenario.name)" -ForegroundColor Magenta
 Write-Host " $($scenario.description)" -ForegroundColor DarkGray
@@ -219,6 +223,36 @@ function Resolve-ActorValue {
     return $Value
 }
 
+function Resolve-TemplateValue {
+    param(
+        [AllowNull()][object]$TemplateValue,
+        [Parameter(Mandatory = $true)][hashtable]$ResolvedActors
+    )
+
+    if ($null -eq $TemplateValue) { return $null }
+
+    if ($TemplateValue -is [System.Array]) {
+        if ($TemplateValue.Count -eq 0) { return $null }
+        return Resolve-TemplateValue -TemplateValue ($TemplateValue | Get-Random) -ResolvedActors $ResolvedActors
+    }
+
+    if ($TemplateValue -isnot [string]) {
+        return $TemplateValue
+    }
+
+    return [regex]::Replace($TemplateValue, '\{\{(\w+)\.(\w+)\}\}', {
+        param($match)
+
+        $actorName = $match.Groups[1].Value
+        $actorField = $match.Groups[2].Value
+        if ($ResolvedActors.ContainsKey($actorName) -and $ResolvedActors[$actorName].ContainsKey($actorField)) {
+            return [string]$ResolvedActors[$actorName][$actorField]
+        }
+
+        return $match.Value
+    })
+}
+
 # Resolve all actors to concrete values for this run
 $resolvedActors = @{}
 if ($scenario.actors) {
@@ -340,10 +374,14 @@ if ($Ingest) {
             $offsetSeconds = Get-Random -Minimum 0 -Maximum ([math]::Max(1, $phaseDuration * 60))
             $eventTime = $phaseStart.AddSeconds($offsetSeconds)
             $record["TimeGenerated"] = $eventTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+            if (-not [string]::IsNullOrWhiteSpace($scenarioRunId)) {
+                $record["EventOriginalUid"] = "{0}-{1:D3}-{2:D4}" -f $scenarioRunId, [int]$phase.offsetMinutes, $i
+            }
 
             foreach ($col in $columns) {
                 $colName = $col.name
                 if ($colName -eq "TimeGenerated") { continue }
+                if ($record.Contains($colName)) { continue }
 
                 $value = $null
 
@@ -351,21 +389,7 @@ if ($Ingest) {
                 if ($phase.eventTemplate -and $phase.eventTemplate.PSObject.Properties[$colName]) {
                     $templateValue = $phase.eventTemplate.$colName
 
-                    # Check for actor references like "{{attacker.ip}}"
-                    if ($templateValue -is [string] -and $templateValue -match '^\{\{(\w+)\.(\w+)\}\}$') {
-                        $actorName = $Matches[1]
-                        $actorField = $Matches[2]
-                        if ($resolvedActors.ContainsKey($actorName) -and $resolvedActors[$actorName].ContainsKey($actorField)) {
-                            $value = $resolvedActors[$actorName][$actorField]
-                        }
-                    }
-                    # Check for array values (random selection)
-                    elseif ($templateValue -is [System.Array]) {
-                        $value = $templateValue | Get-Random
-                    }
-                    else {
-                        $value = $templateValue
-                    }
+                    $value = Resolve-TemplateValue -TemplateValue $templateValue -ResolvedActors $resolvedActors
                 }
 
                 # Fall back to schema-defined values

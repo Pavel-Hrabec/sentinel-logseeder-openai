@@ -84,11 +84,16 @@ incident creation enabled.
 By default, generated scenario rules run every 5 minutes and look back 6 hours.
 Suppression is enabled and incident grouping is disabled. When the user answers
 `y` to the analytics-rule prompt after `Deploy and ingest`, the launcher creates
-a fresh run-specific rule resource ID and removes older demo rules for the same
+a fresh run-specific rule resource ID and removes older rules for the same
 scenario. Repeat runs can create a new incident without repeatedly creating
 incidents every 5 minutes while matching logs remain in the lookback window.
-Rule and incident names use the scenario name directly, without adding the
-repository/tool name as a prefix.
+Runtime scenario events are stamped with a run-scoped `EventOriginalUid`, and
+the generated rule filters on that prefix so retained rows from older demos do
+not get summarized into the new alert.
+Rule and incident names use operational SOC-style detection names, without
+adding the repository/tool name, AI wording, or synthetic-data wording. Rules
+also include alert detail overrides, custom details, and entity mappings for
+the fields available in the scenario logs.
 
 Useful actions:
 

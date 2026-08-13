@@ -27,7 +27,7 @@ Sentinel alert severity. Default: Medium.
 
 .PARAMETER FreshDemoRun
 Creates a run-specific analytics rule ID and removes older rules with the same
-display name. Use this after ingesting scenario data so each demo run can
+display name. Use this after ingesting scenario data so each scenario run can
 create one fresh incident without leaving duplicate active rules.
 
 .PARAMETER PreviewOnly
@@ -81,7 +81,7 @@ function ConvertTo-SafeName {
 function ConvertTo-RuleResourceName {
     param([Parameter(Mandatory = $true)][string]$DisplayName)
 
-    return ConvertTo-SafeName -Value "$DisplayName Demo"
+    return ConvertTo-SafeName -Value $DisplayName
 }
 
 function ConvertTo-RunStamp {
@@ -105,6 +105,21 @@ function ConvertTo-RunStamp {
     return ConvertTo-SafeName -Value $stamp.ToString("yyyyMMddTHHmmssZ", [System.Globalization.CultureInfo]::InvariantCulture)
 }
 
+function ConvertTo-RunRuleResourceName {
+    param(
+        [Parameter(Mandatory = $true)][string]$BaseRuleId,
+        [Parameter(Mandatory = $true)][string]$RunStamp
+    )
+
+    $reservedLength = $RunStamp.Length + 1
+    $maxBaseLength = 64 - $reservedLength
+    $safeBase = $BaseRuleId
+    if ($safeBase.Length -gt $maxBaseLength) {
+        $safeBase = $safeBase.Substring(0, $maxBaseLength).Trim('-')
+    }
+    return "$safeBase-$RunStamp"
+}
+
 function ConvertTo-ScenarioDisplayName {
     param([Parameter(Mandatory = $true)][string]$Value)
 
@@ -114,10 +129,119 @@ function ConvertTo-ScenarioDisplayName {
     $name = $name.Trim()
 
     if ([string]::IsNullOrWhiteSpace($name)) {
-        return "Synthetic security scenario"
+        return "Security scenario"
     }
 
     return (Get-Culture).TextInfo.ToTitleCase($name.ToLowerInvariant())
+}
+
+function ConvertTo-ScenarioKey {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $key = $Value.ToLowerInvariant()
+    $key = $key -replace '-openai-runtime$', ''
+    $key = $key -replace '-runtime$', ''
+    return $key
+}
+
+function Get-ScenarioDetectionProfile {
+    param(
+        [Parameter(Mandatory = $true)][string]$ScenarioKey,
+        [Parameter(Mandatory = $true)][string]$FallbackName
+    )
+
+    $profiles = @{
+        "brute-force-lateral-movement" = [pscustomobject]@{
+            DisplayName = "RDP brute force followed by lateral movement"
+            Description = "Detects repeated failed RDP authentication attempts followed by a successful remote logon, an internal RDP connection, and discovery command execution. This pattern can indicate credential compromise followed by hands-on-keyboard lateral movement. Investigate the source IP, validate the account activity with the user, review RDP exposure, and isolate affected hosts if the activity is unauthorized."
+            Summary = "A sequence of RDP failures, successful authentication, lateral RDP activity, and discovery commands was observed."
+            RecommendedActions = "Confirm whether the sign-in and RDP activity were expected. Reset the affected account if unauthorized, revoke sessions, inspect the source and destination hosts, review command execution, and restrict exposed RDP access."
+        }
+        "credential-theft-privesc" = [pscustomobject]@{
+            DisplayName = "LSASS credential dumping and account creation"
+            Description = "Detects process activity consistent with LSASS credential access together with local administrator account creation and follow-on elevated access. This pattern can indicate credential theft, privilege escalation, and persistence. Review process command lines, validate the account creation, collect endpoint evidence, and rotate credentials for impacted users."
+            Summary = "Credential dumping behavior, administrator account changes, and elevated follow-on activity were observed."
+            RecommendedActions = "Validate the new or modified account, disable it if unauthorized, collect endpoint triage data, review LSASS access, reset impacted credentials, and hunt for lateral movement using the elevated account."
+        }
+        "data-exfiltration" = [pscustomobject]@{
+            DisplayName = "Sensitive data collection and exfiltration"
+            Description = "Detects sensitive resource discovery, bulk file access, large outbound network transfers, and DNS queries consistent with data staging or exfiltration. This pattern can indicate an insider threat or a compromised privileged account. Review accessed objects and files, inspect outbound destinations, and preserve evidence for data exposure assessment."
+            Summary = "Sensitive data access, bulk file activity, outbound transfer volume, and DNS activity were observed."
+            RecommendedActions = "Validate the user activity, review accessed files and audit objects, block or investigate outbound destinations, inspect DNS queries, contain the source host if unauthorized, and assess possible data exposure."
+        }
+        "ransomware-deployment" = [pscustomobject]@{
+            DisplayName = "Ransomware behavior with file encryption"
+            Description = "Detects a chain of suspicious script or payload execution, recovery deletion commands, high-volume file rename or modification activity, and registry persistence changes. This pattern can indicate ransomware execution or preparation for impact. Prioritize endpoint isolation, process containment, and recovery validation."
+            Summary = "Payload execution, recovery tampering, file encryption activity, and registry persistence were observed."
+            RecommendedActions = "Isolate impacted hosts, stop malicious processes, preserve forensic evidence, validate backups, review encrypted or renamed files, check registry persistence, and begin incident response escalation."
+        }
+    }
+
+    if ($profiles.ContainsKey($ScenarioKey)) {
+        return $profiles[$ScenarioKey]
+    }
+
+    return [pscustomobject]@{
+        DisplayName = $FallbackName
+        Description = "Detects a correlated sequence of security events across multiple data sources that may indicate unauthorized activity. Review the involved accounts, hosts, IP addresses, commands, files, and network destinations to determine whether the activity is expected."
+        Summary = "A correlated sequence of security events was observed across multiple telemetry sources."
+        RecommendedActions = "Validate the activity owner, review the involved entities, inspect supporting telemetry, contain affected assets if unauthorized, and document the investigation outcome."
+    }
+}
+
+function New-EntityMapping {
+    param(
+        [Parameter(Mandatory = $true)][string]$EntityType,
+        [Parameter(Mandatory = $true)][hashtable[]]$FieldMappings
+    )
+
+    return @{
+        entityType = $EntityType
+        fieldMappings = @($FieldMappings | ForEach-Object {
+            @{
+                identifier = $_.Identifier
+                columnName = $_.ColumnName
+            }
+        })
+    }
+}
+
+function Get-ScenarioEntityMappings {
+    param([Parameter(Mandatory = $true)][string]$ScenarioKey)
+
+    $account = New-EntityMapping -EntityType "Account" -FieldMappings @(
+        @{ Identifier = "FullName"; ColumnName = "AccountCustomEntity" }
+    )
+    $hostEntity = New-EntityMapping -EntityType "Host" -FieldMappings @(
+        @{ Identifier = "FullName"; ColumnName = "HostCustomEntity" }
+    )
+    $ip = New-EntityMapping -EntityType "IP" -FieldMappings @(
+        @{ Identifier = "Address"; ColumnName = "IPCustomEntity" }
+    )
+    $dns = New-EntityMapping -EntityType "DNS" -FieldMappings @(
+        @{ Identifier = "DomainName"; ColumnName = "DNSCustomEntity" }
+    )
+    $file = New-EntityMapping -EntityType "File" -FieldMappings @(
+        @{ Identifier = "Name"; ColumnName = "FileNameCustomEntity" },
+        @{ Identifier = "Directory"; ColumnName = "FileDirCustomEntity" }
+    )
+    $process = New-EntityMapping -EntityType "Process" -FieldMappings @(
+        @{ Identifier = "CommandLine"; ColumnName = "ProcessCmdCustomEntity" },
+        @{ Identifier = "ProcessId"; ColumnName = "ProcessIdCustomEntity" },
+        @{ Identifier = "CreationTimeUtc"; ColumnName = "ProcessTimeCustomEntity" }
+    )
+    $registryKey = New-EntityMapping -EntityType "RegistryKey" -FieldMappings @(
+        @{ Identifier = "Hive"; ColumnName = "RegistryHiveCustomEntity" },
+        @{ Identifier = "Key"; ColumnName = "RegistryKeyCustomEntity" }
+    )
+
+    switch ($ScenarioKey) {
+        "data-exfiltration" { return @($account, $hostEntity, $ip, $dns, $file) }
+        "ransomware-deployment" { return @($account, $hostEntity, $ip, $file, $process) }
+        "credential-theft-privesc" { return @($account, $hostEntity, $ip, $process, $registryKey) }
+        "brute-force-lateral-movement" { return @($account, $hostEntity, $ip, $process) }
+        default { return @($account, $hostEntity, $ip, $file, $process) }
+    }
 }
 
 function Get-ConfigValue {
@@ -188,7 +312,7 @@ function Test-KqlTemplateField {
     if ($Name -in @("EventCount", "EventStartTime", "EventEndTime", "EventProduct", "EventVendor", "EventSchema", "EventSchemaVersion")) { return $false }
     if ($null -eq $Value) { return $false }
     if ($Value -is [string] -and [string]::IsNullOrWhiteSpace($Value)) { return $false }
-    if ($Value -is [string] -and $Value -match '^\{\{.+\}\}$') { return $false }
+    if ($Value -is [string] -and $Value -match '\{\{.+?\}\}') { return $false }
     if ($Value -is [System.Management.Automation.PSCustomObject] -or $Value -is [hashtable]) { return $false }
     return $true
 }
@@ -205,6 +329,7 @@ function ConvertTo-KqlCondition {
         $items = @($Value | Where-Object {
             $null -ne $_ -and
             -not [string]::IsNullOrWhiteSpace([string]$_) -and
+            ([string]$_ -notmatch '\{\{.+?\}\}') -and
             ($_ -is [string] -or $_ -is [int] -or $_ -is [long] -or $_ -is [double] -or $_ -is [decimal] -or $_ -is [bool])
         })
         if ($items.Count -eq 0) { return $null }
@@ -226,7 +351,8 @@ function ConvertTo-KqlCondition {
 function New-ScenarioDetectionQuery {
     param(
         [Parameter(Mandatory = $true)]$Scenario,
-        [Parameter(Mandatory = $true)][int]$LookbackHours
+        [Parameter(Mandatory = $true)][int]$LookbackHours,
+        [Parameter(Mandatory = $true)]$DetectionProfile
     )
 
     $tableNames = @($Scenario.tables.PSObject.Properties.Name | Sort-Object -Unique)
@@ -264,9 +390,60 @@ function New-ScenarioDetectionQuery {
     $query += "let Lookback = ${LookbackHours}h;"
     $query += $unionLines
     $query += "| where TimeGenerated > ago(Lookback)"
+    if ($Scenario.PSObject.Properties['runId'] -and -not [string]::IsNullOrWhiteSpace($Scenario.runId)) {
+        $query += "| where tostring(column_ifexists('EventOriginalUid', '')) startswith $(ConvertTo-KqlString -Value $Scenario.runId)"
+    }
     $query += "| where " + ($phasePredicates -join " or`n    ")
-    $query += "| extend ScenarioName = $(ConvertTo-KqlString -Value $Scenario.name)"
-    $query += "| order by TimeGenerated desc"
+    $query += "| extend AccountCandidate = tostring(column_ifexists('TargetUsername', ''))"
+    $query += "| extend AccountCandidate = iff(isempty(AccountCandidate), tostring(column_ifexists('ActorUsername', '')), AccountCandidate)"
+    $query += "| extend AccountCandidate = iff(isempty(AccountCandidate), tostring(column_ifexists('SrcUsername', '')), AccountCandidate)"
+    $query += "| extend AccountCandidate = iff(isempty(AccountCandidate), tostring(column_ifexists('DstUsername', '')), AccountCandidate)"
+    $query += "| extend HostCandidate = tostring(column_ifexists('DvcHostname', ''))"
+    $query += "| extend HostCandidate = iff(isempty(HostCandidate), tostring(column_ifexists('TargetHostname', '')), HostCandidate)"
+    $query += "| extend HostCandidate = iff(isempty(HostCandidate), tostring(column_ifexists('SrcHostname', '')), HostCandidate)"
+    $query += "| extend HostCandidate = iff(isempty(HostCandidate), tostring(column_ifexists('DstHostname', '')), HostCandidate)"
+    $query += "| extend HostCandidate = iff(isempty(HostCandidate), tostring(column_ifexists('DvcFQDN', '')), HostCandidate)"
+    $query += "| extend SrcIpCandidate = tostring(column_ifexists('SrcIpAddr', ''))"
+    $query += "| extend DstIpCandidate = tostring(column_ifexists('DstIpAddr', ''))"
+    $query += "| extend ProcessNameCandidate = tostring(column_ifexists('TargetProcessName', ''))"
+    $query += "| extend ProcessNameCandidate = iff(isempty(ProcessNameCandidate), tostring(column_ifexists('ActingProcessName', '')), ProcessNameCandidate)"
+    $query += "| extend ProcessCommandLineCandidate = tostring(column_ifexists('TargetProcessCommandLine', ''))"
+    $query += "| extend ProcessCommandLineCandidate = iff(isempty(ProcessCommandLineCandidate), tostring(column_ifexists('ActingProcessCommandLine', '')), ProcessCommandLineCandidate)"
+    $query += "| extend ProcessIdCandidate = tostring(column_ifexists('TargetProcessId', ''))"
+    $query += "| extend ProcessCreationCandidate = todatetime(column_ifexists('TargetProcessCreationTime', datetime(null)))"
+    $query += "| extend FilePathCandidate = tostring(column_ifexists('TargetFilePath', ''))"
+    $query += "| extend FileNameCandidate = tostring(column_ifexists('TargetFileName', ''))"
+    $query += "| extend FileNameCandidate = iff(isempty(FileNameCandidate) and isnotempty(FilePathCandidate), extract(@'([^\\\\/]+)$', 1, FilePathCandidate), FileNameCandidate)"
+    $query += "| extend FileDirectoryCandidate = iff(isnotempty(FilePathCandidate), replace_regex(FilePathCandidate, @'[\\\\/][^\\\\/]*$', ''), '')"
+    $query += "| extend DnsCandidate = tostring(column_ifexists('DnsQuery', ''))"
+    $query += "| extend UrlCandidate = tostring(column_ifexists('TargetUrl', ''))"
+    $query += "| extend RegistryKeyCandidate = tostring(column_ifexists('RegistryKey', ''))"
+    $query += "| extend RegistryValueNameCandidate = tostring(column_ifexists('RegistryValue', ''))"
+    $query += "| extend RegistryValueDataCandidate = tostring(column_ifexists('RegistryValueData', ''))"
+    $query += "| extend RegistryHiveShort = extract(@'^(HKLM|HKCU|HKCR|HKU|HKCC)\\\\', 1, RegistryKeyCandidate)"
+    $query += "| extend RegistryHiveCandidate = case(RegistryHiveShort == 'HKLM', 'HKEY_LOCAL_MACHINE', RegistryHiveShort == 'HKCU', 'HKEY_CURRENT_USER', RegistryHiveShort == 'HKCR', 'HKEY_CLASSES_ROOT', RegistryHiveShort == 'HKU', 'HKEY_USERS', RegistryHiveShort == 'HKCC', 'HKEY_CURRENT_CONFIG', '')"
+    $query += "| extend RegistryPathCandidate = extract(@'^(?:HKLM|HKCU|HKCR|HKU|HKCC)\\\\(.+)$', 1, RegistryKeyCandidate)"
+    $query += "| extend RegistryPathCandidate = iff(isempty(RegistryPathCandidate), RegistryKeyCandidate, RegistryPathCandidate)"
+    $query += "| extend SrcBytesValue = tolong(column_ifexists('SrcBytes', 0))"
+    $query += "| summarize EventCount=count(), FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated), HighSeverityEvents=countif(tostring(column_ifexists('EventSeverity', '')) =~ 'High'), MediumSeverityEvents=countif(tostring(column_ifexists('EventSeverity', '')) =~ 'Medium'), FailureEvents=countif(tostring(column_ifexists('EventResult', '')) =~ 'Failure'), SuccessEvents=countif(tostring(column_ifexists('EventResult', '')) =~ 'Success'), TotalBytesOut=sum(SrcBytesValue), Tables=make_set(LogTable, 10), Accounts=make_set_if(AccountCandidate, isnotempty(AccountCandidate), 10), Hosts=make_set_if(HostCandidate, isnotempty(HostCandidate), 10), SrcIPs=make_set_if(SrcIpCandidate, isnotempty(SrcIpCandidate), 10), DstIPs=make_set_if(DstIpCandidate, isnotempty(DstIpCandidate), 10), Processes=make_set_if(ProcessNameCandidate, isnotempty(ProcessNameCandidate), 10), ProcessCommands=make_set_if(ProcessCommandLineCandidate, isnotempty(ProcessCommandLineCandidate), 10), ProcessIds=make_set_if(ProcessIdCandidate, isnotempty(ProcessIdCandidate), 10), ProcessTimes=make_set_if(ProcessCreationCandidate, isnotnull(ProcessCreationCandidate), 10), FileNames=make_set_if(FileNameCandidate, isnotempty(FileNameCandidate), 10), FileDirs=make_set_if(FileDirectoryCandidate, isnotempty(FileDirectoryCandidate), 10), DnsQueries=make_set_if(DnsCandidate, isnotempty(DnsCandidate), 10), Urls=make_set_if(UrlCandidate, isnotempty(UrlCandidate), 10), RegistryHives=make_set_if(RegistryHiveCandidate, isnotempty(RegistryHiveCandidate), 10), RegistryKeys=make_set_if(RegistryPathCandidate, isnotempty(RegistryPathCandidate), 10), RegistryValueNames=make_set_if(RegistryValueNameCandidate, isnotempty(RegistryValueNameCandidate), 10), RegistryValueData=make_set_if(RegistryValueDataCandidate, isnotempty(RegistryValueDataCandidate), 10)"
+    $query += "| where EventCount > 0"
+    $query += "| extend DetectionName = $(ConvertTo-KqlString -Value $DetectionProfile.DisplayName)"
+    $query += "| extend RecommendedActions = $(ConvertTo-KqlString -Value $DetectionProfile.RecommendedActions)"
+    $query += "| extend AccountCustomEntity = tostring(Accounts[0]), HostCustomEntity = tostring(Hosts[0])"
+    $query += "| extend SrcIPCustomEntity = tostring(SrcIPs[0]), DstIPCustomEntity = tostring(DstIPs[0])"
+    $query += "| extend IPCustomEntity = iff(isnotempty(SrcIPCustomEntity), SrcIPCustomEntity, DstIPCustomEntity)"
+    $query += "| extend DNSCustomEntity = tostring(DnsQueries[0]), UrlCustomEntity = tostring(Urls[0])"
+    $query += "| extend FileNameCustomEntity = tostring(FileNames[0]), FileDirCustomEntity = tostring(FileDirs[0])"
+    $query += "| extend ProcessCmdCustomEntity = tostring(ProcessCommands[0]), ProcessIdCustomEntity = tostring(ProcessIds[0]), ProcessTimeCustomEntity = todatetime(ProcessTimes[0])"
+    $query += "| extend RegistryHiveCustomEntity = tostring(RegistryHives[0]), RegistryKeyCustomEntity = tostring(RegistryKeys[0]), RegistryValueCustomEntity = tostring(RegistryValueNames[0]), RegistryDataCustomEntity = tostring(RegistryValueData[0])"
+    $query += "| extend AccountList = iff(array_length(Accounts) == 0, 'n/a', strcat_array(Accounts, ', ')), HostList = iff(array_length(Hosts) == 0, 'n/a', strcat_array(Hosts, ', '))"
+    $query += "| extend SrcIPList = iff(array_length(SrcIPs) == 0, 'n/a', strcat_array(SrcIPs, ', ')), DstIPList = iff(array_length(DstIPs) == 0, 'n/a', strcat_array(DstIPs, ', '))"
+    $query += "| extend ProcessList = iff(array_length(Processes) == 0, 'n/a', strcat_array(Processes, ', ')), ProcessCommandList = iff(array_length(ProcessCommands) == 0, 'n/a', strcat_array(ProcessCommands, ' | '))"
+    $query += "| extend FileList = iff(array_length(FileNames) == 0, 'n/a', strcat_array(FileNames, ', ')), DomainList = iff(array_length(DnsQueries) == 0, 'n/a', strcat_array(DnsQueries, ', '))"
+    $query += "| extend RegistryList = iff(array_length(RegistryKeys) == 0, 'n/a', strcat_array(RegistryKeys, ', ')), TableList = strcat_array(Tables, ', ')"
+    $query += "| extend AlertSummary = strcat($(ConvertTo-KqlString -Value $DetectionProfile.Summary), ' Count=', tostring(EventCount), '; firstSeen=', format_datetime(FirstSeen, 'yyyy-MM-dd HH:mm:ss'), ' UTC; lastSeen=', format_datetime(LastSeen, 'yyyy-MM-dd HH:mm:ss'), ' UTC.')"
+    $query += "| extend AlertEvidence = strcat('Accounts: ', AccountList, '; Hosts: ', HostList, '; Source IPs: ', SrcIPList, '; Destination IPs: ', DstIPList, '; Processes: ', ProcessList, '; Commands: ', ProcessCommandList, '; Files: ', FileList, '; DNS: ', DomainList, '; Registry: ', RegistryList, '; Outbound bytes: ', tostring(TotalBytesOut), '; Tables: ', TableList)"
+    $query += "| project TimeGenerated=LastSeen, DetectionName, AlertSummary, AlertEvidence, RecommendedActions, EventCount, FirstSeen, LastSeen, HighSeverityEvents, MediumSeverityEvents, FailureEvents, SuccessEvents, TotalBytesOut, TableList, AccountList, HostList, SrcIPList, DstIPList, ProcessList, ProcessCommandList, FileList, DomainList, RegistryList, AccountCustomEntity, HostCustomEntity, IPCustomEntity, SrcIPCustomEntity, DstIPCustomEntity, DNSCustomEntity, UrlCustomEntity, FileNameCustomEntity, FileDirCustomEntity, ProcessCmdCustomEntity, ProcessIdCustomEntity, ProcessTimeCustomEntity, RegistryHiveCustomEntity, RegistryKeyCustomEntity, RegistryValueCustomEntity, RegistryDataCustomEntity"
     return ($query -join "`n")
 }
 
@@ -298,7 +475,7 @@ function Remove-ExistingScenarioRules {
     )
 
     Write-Host ""
-    Write-Host "Removing older enabled demo rules for this scenario..." -ForegroundColor Cyan
+    Write-Host "Removing older enabled rules for this scenario..." -ForegroundColor Cyan
     $listJson = az rest --method get --uri $ListUri 2>&1
     if ($LASTEXITCODE -ne 0) {
         $listJson | Write-Host
@@ -330,20 +507,23 @@ try { $null = Get-Command az -ErrorAction Stop } catch {
 
 $scenario = Get-Content -Path $ScenarioFile -Raw | ConvertFrom-Json
 $workspace = Resolve-DetectionWorkspaceContext -ConfigPath $WorkspaceConfig
+$scenarioKey = ConvertTo-ScenarioKey -Value $scenario.name
+$fallbackDisplayName = ConvertTo-ScenarioDisplayName -Value $scenario.name
+$detectionProfile = Get-ScenarioDetectionProfile -ScenarioKey $scenarioKey -FallbackName $fallbackDisplayName
 
 $displayName = if ([string]::IsNullOrWhiteSpace($RuleName)) {
-    ConvertTo-ScenarioDisplayName -Value $scenario.name
+    $detectionProfile.DisplayName
 } else {
     $RuleName
 }
 
 $baseRuleId = ConvertTo-RuleResourceName -DisplayName $displayName
 $ruleId = if ($FreshDemoRun) {
-    ConvertTo-SafeName -Value "$baseRuleId $(ConvertTo-RunStamp -Scenario $scenario)"
+    ConvertTo-RunRuleResourceName -BaseRuleId $baseRuleId -RunStamp (ConvertTo-RunStamp -Scenario $scenario)
 } else {
     $baseRuleId
 }
-$query = New-ScenarioDetectionQuery -Scenario $scenario -LookbackHours $LookbackHours
+$query = New-ScenarioDetectionQuery -Scenario $scenario -LookbackHours $LookbackHours -DetectionProfile $detectionProfile
 $tactics = @(Get-ScenarioTactics -Scenario $scenario)
 $apiVersion = "2025-09-01"
 $listUri = "https://management.azure.com/subscriptions/$($workspace.SubscriptionId)/resourceGroups/$($workspace.ResourceGroup)/providers/Microsoft.OperationalInsights/workspaces/$($workspace.WorkspaceName)/providers/Microsoft.SecurityInsights/alertRules?api-version=$apiVersion"
@@ -353,7 +533,7 @@ $body = [ordered]@{
     kind = "Scheduled"
     properties = [ordered]@{
         displayName = $displayName
-        description = "Creates a Sentinel incident when logs matching the synthetic security scenario '$($scenario.name)' are found."
+        description = $detectionProfile.Description
         severity = $Severity
         enabled = $true
         query = $query
@@ -379,13 +559,32 @@ $body = [ordered]@{
             }
         }
         customDetails = @{
-            ScenarioName = "ScenarioName"
-            SourceTable = "LogTable"
+            Detection = "DetectionName"
+            EventCount = "EventCount"
+            FirstSeen = "FirstSeen"
+            LastSeen = "LastSeen"
+            Accounts = "AccountList"
+            Hosts = "HostList"
+            SrcIPs = "SrcIPList"
+            DstIPs = "DstIPList"
+            Processes = "ProcessList"
+            Commands = "ProcessCommandList"
+            Files = "FileList"
+            Domains = "DomainList"
+            RegistryKeys = "RegistryList"
+            BytesOut = "TotalBytesOut"
+            Tables = "TableList"
+            Evidence = "AlertEvidence"
+            Response = "RecommendedActions"
+            HighEvents = "HighSeverityEvents"
+            Failures = "FailureEvents"
+            Successes = "SuccessEvents"
         }
         alertDetailsOverride = @{
-            alertDisplayNameFormat = "$displayName"
-            alertDescriptionFormat = "Synthetic security scenario '$($scenario.name)' generated matching events."
+            alertDisplayNameFormat = "{{DetectionName}} - {{AccountCustomEntity}} / {{HostCustomEntity}}"
+            alertDescriptionFormat = "{{AlertSummary}} Evidence: {{AlertEvidence}} Recommended response: {{RecommendedActions}}"
         }
+        entityMappings = @(Get-ScenarioEntityMappings -ScenarioKey $scenarioKey)
     }
 }
 

@@ -215,11 +215,13 @@ rule. If deployment or ingestion fails, the menu stops instead of continuing
 with a partial run.
 
 For repeat demos, answering `y` to the analytics-rule prompt after `Deploy and
-ingest` uses a run-specific rule resource ID and removes older enabled demo
-rules for the same scenario. The visible rule and incident names still use the
-scenario name. Suppression is enabled and incident grouping is disabled, so a
-fresh run can create a new incident without repeatedly creating incidents every
-5 minutes while the logs remain in the 6-hour lookback window.
+ingest` uses a run-specific rule resource ID and removes older enabled rules for
+the same scenario. Suppression is enabled and incident grouping is disabled, so
+a fresh run can create a new incident without repeatedly creating incidents
+every 5 minutes while the logs remain in the 6-hour lookback window. Runtime
+scenario events are stamped with a run-scoped `EventOriginalUid`, and the
+generated detection query filters on that value so retained rows from older
+demos do not get summarized into the new alert.
 
 The workspace resolver first uses direct lookup when `workspaceName`,
 `subscriptionId`, and `resourceGroup` are present in `config/workspace.json`.
@@ -229,15 +231,14 @@ The full path has been tested with these built-in scenarios:
 
 | Scenario | Rule / incident name | Default tables |
 |---|---|---|
-| `brute-force-lateral-movement` | `Brute Force Lateral Movement` | `ASimAuthenticationEventLogs`, `ASimNetworkSessionLogs`, `ASimProcessEventLogs` |
-| `credential-theft-privesc` | `Credential Theft Privesc` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimUserManagementActivityLogs` |
-| `data-exfiltration` | `Data Exfiltration` | `ASimAuditEventLogs`, `ASimFileEventLogs`, `ASimNetworkSessionLogs`, `ASimDnsActivityLogs` |
-| `ransomware-deployment` | `Ransomware Deployment` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimFileEventLogs`, `ASimRegistryEventLogs` |
+| `brute-force-lateral-movement` | `RDP brute force followed by lateral movement` | `ASimAuthenticationEventLogs`, `ASimNetworkSessionLogs`, `ASimProcessEventLogs` |
+| `credential-theft-privesc` | `LSASS credential dumping and account creation` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimUserManagementActivityLogs` |
+| `data-exfiltration` | `Sensitive data collection and exfiltration` | `ASimAuditEventLogs`, `ASimFileEventLogs`, `ASimNetworkSessionLogs`, `ASimDnsActivityLogs` |
+| `ransomware-deployment` | `Ransomware behavior with file encryption` | `ASimAuthenticationEventLogs`, `ASimProcessEventLogs`, `ASimFileEventLogs`, `ASimRegistryEventLogs` |
 
-Generated analytics rule and incident names use the scenario name directly.
-They do not add `LogSeeder` as a prefix.
-The underlying Azure resource name adds a hidden `Demo` suffix. Full demo runs
-also append a timestamp to that resource name so Sentinel treats each run as a
+Generated analytics rule and incident names use operational detection names.
+They do not add `LogSeeder`, `AI`, or `synthetic` wording. Full runs append a
+timestamp to the underlying Azure resource name so Sentinel treats each run as a
 fresh rule and can create a fresh incident.
 
 ## Example: Run A Prebuilt Scenario
@@ -267,10 +268,15 @@ than simply alerting on every row in those tables.
 Scenario detection rules run every 5 minutes, look back 6 hours by default, and
 create Microsoft Sentinel incidents when matching logs are found. Suppression is
 enabled and incident grouping is disabled. Full demo runs create a fresh
-run-specific rule resource ID and clean up older demo rules for the same
-scenario, so repeat demos are visible without generating an incident storm.
-Generated analytics rule and incident names use the scenario name directly,
-without adding the repository/tool name as a prefix.
+run-specific rule resource ID and clean up older rules for the same
+scenario, so repeat demos are visible without generating an incident storm. The
+rule query is also scoped to the current runtime scenario's `EventOriginalUid`
+prefix, which keeps the alert evidence focused on the current run even when
+older demo rows are still retained in Log Analytics.
+Generated analytics rules include SOC-style descriptions, alert detail
+overrides, custom details, and entity mappings for accounts, hosts, IPs, DNS,
+URLs, files, processes, and registry artifacts when those values exist in the
+scenario logs.
 
 ## Example: Ingest Sample Data Into A Table
 
@@ -359,7 +365,7 @@ To verify the built-in scenario analytics rules, use Azure CLI:
 ```powershell
 az rest --method get `
   --uri "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>/providers/Microsoft.SecurityInsights/alertRules?api-version=2025-09-01" `
-  --query "value[?properties.displayName=='Brute Force Lateral Movement' || properties.displayName=='Credential Theft Privesc' || properties.displayName=='Data Exfiltration' || properties.displayName=='Ransomware Deployment'].properties.{displayName:displayName,enabled:enabled,queryFrequency:queryFrequency,queryPeriod:queryPeriod,suppressionEnabled:suppressionEnabled,createIncident:incidentConfiguration.createIncident,grouping:incidentConfiguration.groupingConfiguration.enabled,severity:severity}" `
+  --query "value[?properties.displayName=='RDP brute force followed by lateral movement' || properties.displayName=='LSASS credential dumping and account creation' || properties.displayName=='Sensitive data collection and exfiltration' || properties.displayName=='Ransomware behavior with file encryption'].properties.{displayName:displayName,enabled:enabled,queryFrequency:queryFrequency,queryPeriod:queryPeriod,suppressionEnabled:suppressionEnabled,createIncident:incidentConfiguration.createIncident,grouping:incidentConfiguration.groupingConfiguration.enabled,severity:severity,entities:length(entityMappings),details:length(customDetails)}" `
   -o table
 ```
 
@@ -381,10 +387,10 @@ To verify incidents in Sentinel Logs:
 SecurityIncident
 | where TimeGenerated > ago(24h)
 | where Title in~ (
-    "Brute Force Lateral Movement",
-    "Credential Theft Privesc",
-    "Data Exfiltration",
-    "Ransomware Deployment"
+    "RDP brute force followed by lateral movement",
+    "LSASS credential dumping and account creation",
+    "Sensitive data collection and exfiltration",
+    "Ransomware behavior with file encryption"
 )
 | project TimeGenerated, IncidentNumber, Title, Severity, Status
 | order by TimeGenerated desc
@@ -396,12 +402,12 @@ To verify alerts:
 SecurityAlert
 | where TimeGenerated > ago(24h)
 | where AlertName in~ (
-    "Brute Force Lateral Movement",
-    "Credential Theft Privesc",
-    "Data Exfiltration",
-    "Ransomware Deployment"
+    "RDP brute force followed by lateral movement",
+    "LSASS credential dumping and account creation",
+    "Sensitive data collection and exfiltration",
+    "Ransomware behavior with file encryption"
 )
-| project TimeGenerated, AlertName, AlertSeverity, ProviderName, SystemAlertId
+| project TimeGenerated, AlertName, AlertSeverity, ProviderName, SystemAlertId, Entities, ExtendedProperties
 | order by TimeGenerated desc
 ```
 
