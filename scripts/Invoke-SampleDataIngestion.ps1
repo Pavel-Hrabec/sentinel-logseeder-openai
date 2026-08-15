@@ -57,6 +57,10 @@ Service principal client secret for ingestion auth (optional fallback).
 .PARAMETER SkipRoleAssignment
 When specified during -Deploy, skips the automatic 'Monitoring Metrics Publisher' role
 assignment on the newly created DCR and just prints a reminder instead.
+
+.PARAMETER Quiet
+When specified, reduces deployment status output. Errors and required manual actions
+are still printed.
 #>
 [CmdletBinding()]
 param(
@@ -85,7 +89,9 @@ param(
 
     [string]$ClientSecret,
 
-    [switch]$SkipRoleAssignment
+    [switch]$SkipRoleAssignment,
+
+    [switch]$Quiet
 )
 
 Set-StrictMode -Version Latest
@@ -110,6 +116,18 @@ if (-not $EntitiesFile) {
 # ---------------------------------------------------------------------------
 # HELPER FUNCTIONS
 # ---------------------------------------------------------------------------
+
+function Write-LogSeederStatus {
+    param(
+        [Parameter(Mandatory = $true)][string]$Message,
+        [ConsoleColor]$ForegroundColor = [ConsoleColor]::White,
+        [switch]$Always
+    )
+
+    if ($Always -or -not $Quiet) {
+        Write-Host $Message -ForegroundColor $ForegroundColor
+    }
+}
 
 function Assert-AzCli {
     try {
@@ -226,15 +244,16 @@ function Initialize-Dce {
     $apiVersion = "2022-06-01"
     $dce = $null
 
+    Write-LogSeederStatus "Checking Azure for DCE '$DceName'..." -ForegroundColor DarkGray
     try {
         $dce = Invoke-ArmRest -Method "GET" -Uri "https://management.azure.com${dceId}?api-version=$apiVersion"
-        Write-Host "Reusing existing DCE '$DceName'." -ForegroundColor Green
+        Write-LogSeederStatus "Reusing existing DCE '$DceName'." -ForegroundColor Green
     } catch {
         $dce = $null
     }
 
     if (-not $dce) {
-        Write-Host "Creating Data Collection Endpoint '$DceName'..." -ForegroundColor Cyan
+        Write-LogSeederStatus "Creating Data Collection Endpoint '$DceName'..." -ForegroundColor Cyan -Always
         $body = @{
             location   = $Location
             properties = @{
@@ -245,7 +264,7 @@ function Initialize-Dce {
 
         $null = Invoke-ArmRest -Method "PUT" -Uri "https://management.azure.com${dceId}?api-version=$apiVersion" -JsonBody $body
         $dce = Invoke-ArmRest -Method "GET" -Uri "https://management.azure.com${dceId}?api-version=$apiVersion"
-        Write-Host "DCE '$DceName' created." -ForegroundColor Green
+        Write-LogSeederStatus "DCE '$DceName' created." -ForegroundColor Green -Always
     }
 
     return $dce
@@ -265,10 +284,11 @@ function Initialize-CustomTable {
     $tableUri = "https://management.azure.com${WorkspaceResourceId}/tables/${CustomTableName}?api-version=$apiVersion"
 
     $tableExists = $false
+    Write-LogSeederStatus "Checking Azure for custom table '$CustomTableName'..." -ForegroundColor DarkGray
     try {
         $table = Invoke-ArmRest -Method "GET" -Uri $tableUri
         if ($table.properties.provisioningState -eq "Succeeded") {
-            Write-Host "Custom table '$CustomTableName' already exists." -ForegroundColor Green
+            Write-LogSeederStatus "Custom table '$CustomTableName' already exists." -ForegroundColor Green
             $tableExists = $true
         }
     } catch {
@@ -276,7 +296,7 @@ function Initialize-CustomTable {
     }
 
     if (-not $tableExists) {
-        Write-Host "Creating custom table '$CustomTableName'..." -ForegroundColor Cyan
+        Write-LogSeederStatus "Creating custom table '$CustomTableName'..." -ForegroundColor Cyan -Always
 
         $schemaColumns = @(
             @{ name = "TimeGenerated"; type = "datetime"; description = "The time at which the data was generated" }
@@ -305,7 +325,7 @@ function Initialize-CustomTable {
             $message = $_.Exception.Message
             if ($message -match "exist in CMS with name:\s*([A-Za-z0-9_]+)") {
                 $existingName = $Matches[1]
-                Write-Host "Custom table '$CustomTableName' already exists as '$existingName'. Reusing Azure table casing." -ForegroundColor Yellow
+                Write-LogSeederStatus "Custom table '$CustomTableName' already exists as '$existingName'. Reusing Azure table casing." -ForegroundColor Yellow -Always
                 return $existingName
             }
             throw
@@ -317,7 +337,7 @@ function Initialize-CustomTable {
             try {
                 $table = Invoke-ArmRest -Method "GET" -Uri $tableUri
                 if ($table.properties.provisioningState -eq "Succeeded") {
-                    Write-Host "Custom table '$CustomTableName' created." -ForegroundColor Green
+                    Write-LogSeederStatus "Custom table '$CustomTableName' created." -ForegroundColor Green -Always
                     return $CustomTableName
                 }
             } catch { }
@@ -418,6 +438,7 @@ function Initialize-Dcr {
     $dcrUri = "https://management.azure.com${dcrId}?api-version=$apiVersion"
 
     # Check if DCR already exists
+    Write-LogSeederStatus "Checking Azure for DCR '$DcrName'..." -ForegroundColor DarkGray
     $existing = $null
     try {
         $existing = Invoke-ArmRest -Method "GET" -Uri $dcrUri
@@ -431,7 +452,7 @@ function Initialize-Dcr {
         $currentDceId = [string]$existing.properties.dataCollectionEndpointId
 
         if (-not [string]::Equals($currentDceId, $desiredDceId, [StringComparison]::OrdinalIgnoreCase)) {
-            Write-Host "Existing DCR '$DcrName' is associated with a different DCE. Updating it." -ForegroundColor Yellow
+            Write-LogSeederStatus "Existing DCR '$DcrName' is associated with a different DCE. Updating it." -ForegroundColor Yellow -Always
             $needsUpdate = $true
         }
 
@@ -442,7 +463,7 @@ function Initialize-Dcr {
         }
 
         if (-not [string]::Equals($currentWorkspaceId, $desiredWorkspaceId, [StringComparison]::OrdinalIgnoreCase)) {
-            Write-Host "Existing DCR '$DcrName' points to a different workspace destination. Updating it." -ForegroundColor Yellow
+            Write-LogSeederStatus "Existing DCR '$DcrName' points to a different workspace destination. Updating it." -ForegroundColor Yellow -Always
             $needsUpdate = $true
         }
 
@@ -452,7 +473,7 @@ function Initialize-Dcr {
         }
         foreach ($streamName in @($Template.properties.streamDeclarations.Keys)) {
             if ($existingStreams -notcontains $streamName) {
-                Write-Host "Existing DCR '$DcrName' is missing stream '$streamName'. Updating it." -ForegroundColor Yellow
+                Write-LogSeederStatus "Existing DCR '$DcrName' is missing stream '$streamName'. Updating it." -ForegroundColor Yellow -Always
                 $needsUpdate = $true
                 break
             }
@@ -460,14 +481,14 @@ function Initialize-Dcr {
 
         if ($needsUpdate) {
             $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
-            Write-Host "DCR '$DcrName' updated." -ForegroundColor Green
+            Write-LogSeederStatus "DCR '$DcrName' updated." -ForegroundColor Green -Always
         } else {
-            Write-Host "Reusing existing DCR '$DcrName'." -ForegroundColor Green
+            Write-LogSeederStatus "Reusing existing DCR '$DcrName'." -ForegroundColor Green
         }
     } else {
-        Write-Host "Creating DCR '$DcrName'..." -ForegroundColor Cyan
+        Write-LogSeederStatus "Creating DCR '$DcrName'..." -ForegroundColor Cyan -Always
         $null = Invoke-ArmRest -Method "PUT" -Uri $dcrUri -JsonBody $body
-        Write-Host "DCR '$DcrName' created." -ForegroundColor Green
+        Write-LogSeederStatus "DCR '$DcrName' created." -ForegroundColor Green -Always
     }
 
     return $dcrId
@@ -539,7 +560,20 @@ function Grant-DcrPublisherRole {
             return
         }
 
-        Write-Host "`n[RBAC] Assigning 'Monitoring Metrics Publisher' on DCR to $principalType $principalId..." -ForegroundColor Cyan
+        Write-LogSeederStatus "[RBAC] Checking 'Monitoring Metrics Publisher' on DCR for $principalType $principalId..." -ForegroundColor DarkGray
+        $existingAssignments = az role assignment list `
+            --assignee $principalId `
+            --role $roleDefId `
+            --scope $DcrId `
+            --query "[].id" `
+            -o tsv 2>$null
+
+        if ($LASTEXITCODE -eq 0 -and $existingAssignments) {
+            Write-LogSeederStatus "[RBAC] Role assignment already exists." -ForegroundColor Green
+            return
+        }
+
+        Write-LogSeederStatus "[RBAC] Assigning 'Monitoring Metrics Publisher' on DCR to $principalType $principalId..." -ForegroundColor Cyan -Always
         $createOutput = az role assignment create `
             --role $roleDefId `
             --assignee-object-id $principalId `
@@ -548,14 +582,14 @@ function Grant-DcrPublisherRole {
             -o json 2>&1
 
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "[RBAC] Role assignment succeeded (note: propagation may take up to 5 minutes)." -ForegroundColor Green
+            Write-LogSeederStatus "[RBAC] Role assignment succeeded (note: propagation may take up to 5 minutes)." -ForegroundColor Green -Always
             return
         }
 
         # Non-zero exit: check if it's the benign 'already exists' case.
         $errText = ($createOutput | Out-String)
         if ($errText -match "RoleAssignmentExists" -or $errText -match "already exists") {
-            Write-Host "[RBAC] Role assignment already exists - no action needed." -ForegroundColor Green
+            Write-LogSeederStatus "[RBAC] Role assignment already exists - no action needed." -ForegroundColor Green
             return
         }
 
@@ -1019,10 +1053,10 @@ Assert-AzCli | Out-Null
 
 # --- Read configuration ---
 $ws = Read-WorkspaceConfig -ConfigPath $WorkspaceConfig
-Write-Host "Workspace: $($ws.WorkspaceName) (subscription $($ws.SubscriptionId))" -ForegroundColor Cyan
+Write-LogSeederStatus "Workspace: $($ws.WorkspaceName) (subscription $($ws.SubscriptionId))" -ForegroundColor Cyan
 
 $entities = Read-EntitiesConfig -Path $EntitiesFile
-Write-Host "Loaded entity pools: $($entities.users.Count) users, $($entities.ipAddresses.Count) IPs, $($entities.devices.Count) devices" -ForegroundColor Cyan
+Write-LogSeederStatus "Loaded entity pools: $($entities.users.Count) users, $($entities.ipAddresses.Count) IPs, $($entities.devices.Count) devices" -ForegroundColor Cyan
 
 # --- Read schema ---
 if (-not $Schema -and -not $SampleDataFile) {
@@ -1040,12 +1074,12 @@ if ($Schema) {
     if ($schemaRaw.PSObject.Properties['transformKql']) {
         $schemaTransformKql = $schemaRaw.transformKql
     }
-    Write-Host "Loaded schema: $($columnDefs.Count) columns from $Schema" -ForegroundColor Cyan
+    Write-LogSeederStatus "Loaded schema: $($columnDefs.Count) columns from $Schema" -ForegroundColor Cyan
 }
 
 if ($SampleDataFile) {
     $sampleData = Read-SampleData -Path $SampleDataFile
-    Write-Host "Loaded $($sampleData.Count) sample rows from $SampleDataFile" -ForegroundColor Cyan
+    Write-LogSeederStatus "Loaded $($sampleData.Count) sample rows from $SampleDataFile" -ForegroundColor Cyan
 
     # Infer schema from sample data if no explicit schema provided
     if (-not $columnDefs -and $sampleData.Count -gt 0) {
@@ -1060,7 +1094,7 @@ if ($SampleDataFile) {
             elseif ($val -is [hashtable] -or $val -is [pscustomobject] -or $val -is [System.Array]) { $inferredType = "dynamic" }
             $columnDefs += @{ name = $prop.Name; type = $inferredType }
         }
-        Write-Host "Inferred schema from sample data: $($columnDefs.Count) columns" -ForegroundColor Cyan
+        Write-LogSeederStatus "Inferred schema from sample data: $($columnDefs.Count) columns" -ForegroundColor Cyan
     }
 }
 
@@ -1077,10 +1111,10 @@ $streamName        = $null
 
 # --- Deploy infrastructure ---
 if ($Deploy) {
-    Write-Host "`n--- Deploying infrastructure ---" -ForegroundColor Magenta
+    Write-LogSeederStatus "`n--- Deploying infrastructure ---" -ForegroundColor Magenta
 
     $location = Resolve-WorkspaceLocation -WorkspaceResourceId $ws.WorkspaceResourceId
-    Write-Host "Workspace location: $location" -ForegroundColor Cyan
+    Write-LogSeederStatus "Workspace location: $location" -ForegroundColor Cyan
 
     # 1. DCE
     $dce = Initialize-Dce -SubscriptionId $ws.SubscriptionId -ResourceGroupName $ws.ResourceGroup -Location $location -DceName $ws.DceName
@@ -1091,7 +1125,7 @@ if ($Deploy) {
     if (-not $isBuiltIn) {
         $resolvedTableName = Initialize-CustomTable -WorkspaceResourceId $ws.WorkspaceResourceId -CustomTableName $TableName -ColumnDefinitions $columnDefs
         if (-not [string]::Equals($resolvedTableName, $TableName, [StringComparison]::Ordinal)) {
-            Write-Host "Using existing table name '$resolvedTableName' for DCR and ingestion." -ForegroundColor Yellow
+            Write-LogSeederStatus "Using existing table name '$resolvedTableName' for DCR and ingestion." -ForegroundColor Yellow -Always
             $TableName = $resolvedTableName
         }
     }
@@ -1106,12 +1140,12 @@ if ($Deploy) {
 
     $immutableId = Get-DcrImmutableId -DcrId $dcrId
 
-    Write-Host "`nInfrastructure ready:" -ForegroundColor Green
-    Write-Host "  DCE endpoint : $ingestionEndpoint"
-    Write-Host "  DCR name     : $dcrName"
-    Write-Host "  DCR immutable: $immutableId"
-    Write-Host "  Stream       : $streamName"
-    Write-Host "  Table        : $TableName"
+    Write-LogSeederStatus "`nInfrastructure ready:" -ForegroundColor Green
+    Write-LogSeederStatus "  DCE endpoint : $ingestionEndpoint"
+    Write-LogSeederStatus "  DCR name     : $dcrName"
+    Write-LogSeederStatus "  DCR immutable: $immutableId"
+    Write-LogSeederStatus "  Stream       : $streamName"
+    Write-LogSeederStatus "  Table        : $TableName"
 
     # RBAC: attempt auto-assignment of 'Monitoring Metrics Publisher' on the DCR.
     if ($SkipRoleAssignment) {
@@ -1138,7 +1172,7 @@ if ($Deploy) {
         New-Item -ItemType Directory -Path $deployInfoDir -Force | Out-Null
     }
     $deploymentInfo | ConvertTo-Json -Depth 5 | Out-File -FilePath $deployInfoPath -Encoding utf8
-    Write-Host "Deployment info saved to: $deployInfoPath" -ForegroundColor Cyan
+    Write-LogSeederStatus "Deployment info saved to: $deployInfoPath" -ForegroundColor Cyan
 }
 
 # --- Ingest data ---
@@ -1184,4 +1218,4 @@ if (-not $Deploy -and -not $Ingest) {
     Write-Host "No action specified. Use -Deploy, -Ingest, or both." -ForegroundColor Yellow
 }
 
-Write-Host "`nDone." -ForegroundColor Green
+Write-LogSeederStatus "`nDone." -ForegroundColor Green

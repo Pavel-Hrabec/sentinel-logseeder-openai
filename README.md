@@ -155,6 +155,11 @@ Most ingestion paths then ask for an action:
 | Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. If the saved DCE endpoint is stale, the script tries to refresh the metadata from the DCR and retry. |
 | Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
 
+For prebuilt scenarios, deployment uses Azure API checks for each destination
+table before changing anything. Existing DCE, DCR, table, and RBAC resources are
+reused when they already match. Scenario runs keep these checks compact so the
+important status is easier to read.
+
 ## Recommended First Run
 
 Use a prebuilt scenario first because it does not require any AI key.

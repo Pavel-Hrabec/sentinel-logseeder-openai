@@ -224,7 +224,7 @@ function Update-DeploymentInfoFromDcr {
         throw "DCR '$($DeployInfo.dcrId)' has no dataCollectionEndpointId. Run 'Deploy only' or 'Deploy and ingest' to repair it."
     }
 
-    $dce = Invoke-AzRestJson -Method "get" -Uri "https://management.azure.com$dceId?api-version=$dcrApiVersion"
+    $dce = Invoke-AzRestJson -Method "get" -Uri "https://management.azure.com${dceId}?api-version=$dcrApiVersion"
     $endpoint = [string]$dce.properties.logsIngestion.endpoint
     if ([string]::IsNullOrWhiteSpace($endpoint)) {
         throw "Could not read the Logs Ingestion endpoint from DCE '$dceId'. Run 'Deploy only' or 'Deploy and ingest' to refresh it."
@@ -396,6 +396,7 @@ if ($Deploy) {
             WorkspaceConfig = $WorkspaceConfig
             EntitiesFile    = $EntitiesFile
             Deploy          = $true
+            Quiet           = $true
         }
         if ($tbl.SamplePath -and (Test-Path $tbl.SamplePath)) {
             $deployArgs["SampleDataFile"] = $tbl.SamplePath
