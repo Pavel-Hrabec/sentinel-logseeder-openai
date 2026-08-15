@@ -631,7 +631,7 @@ function Get-RunMode {
     $items = @(
         [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, DCR, table resources, then ingest data."; Value = "deployIngest" },
         [pscustomobject]@{ Label = "Deploy only"; Description = "Prepare Azure resources but do not send log data."; Value = "deploy" },
-        [pscustomobject]@{ Label = "Ingest only"; Description = "Use existing deployment info in schemas/*.deploy.json."; Value = "ingest" },
+        [pscustomobject]@{ Label = "Ingest only"; Description = "Send logs using schemas/*.deploy.json; does not deploy resources, but can refresh stale DCE/DCR metadata."; Value = "ingest" },
         [pscustomobject]@{ Label = "Preview command only"; Description = "Show the command without running Azure changes."; Value = "preview" }
     )
     return Read-MenuChoice -Title "Action" -Items $items -AllowBack
@@ -642,7 +642,7 @@ function Get-ScenarioRunMode {
         [pscustomobject]@{ Label = "Deploy and ingest"; Description = "Create/reuse DCE, DCR, table resources, then ingest scenario data."; Value = "deployIngest" },
         [pscustomobject]@{ Label = "Create detection rule"; Description = "Create/update a Sentinel scheduled analytics rule for this scenario without ingesting data."; Value = "detection" },
         [pscustomobject]@{ Label = "Deploy only"; Description = "Prepare Azure resources but do not send log data."; Value = "deploy" },
-        [pscustomobject]@{ Label = "Ingest only"; Description = "Use existing deployment info in schemas/*.deploy.json."; Value = "ingest" },
+        [pscustomobject]@{ Label = "Ingest only"; Description = "Send logs using schemas/*.deploy.json; does not deploy resources, but can refresh stale DCE/DCR metadata."; Value = "ingest" },
         [pscustomobject]@{ Label = "Preview command only"; Description = "Show the deploy-and-ingest command without running Azure changes."; Value = "preview" }
     )
     return Read-MenuChoice -Title "Action" -Items $items -AllowBack

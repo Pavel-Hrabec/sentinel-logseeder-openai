@@ -152,7 +152,7 @@ Most ingestion paths then ask for an action:
 | Deploy and ingest | Creates/reuses Azure ingestion resources and sends synthetic log rows. The menu asks whether to create an incident-generating analytics rule as part of this run. This can create Azure/Sentinel ingestion cost. |
 | Create detection rule | Creates or updates the stable Sentinel analytics rule only. It does not deploy ingestion resources or send logs. |
 | Deploy only | Creates/reuses DCE, DCR, table resources, and deployment metadata, but sends no log data. |
-| Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. |
+| Ingest only | Uses existing `schemas/*.deploy.json` metadata to send log data without redeploying. If the saved DCE endpoint is stale, the script tries to refresh the metadata from the DCR and retry. |
 | Preview command only | Prints the underlying command and makes no Azure changes. Recommended before a first run. |
 
 ## Recommended First Run
@@ -503,11 +503,16 @@ propagating. The ingestion step retries this specific 403, but if Azure still
 blocks it, wait a few minutes and use `Ingest only` for the same table/scenario.
 
 If ingestion fails with a message like `data collection endpoint FQDN is not
-associated with the data collection rule`, rerun the same path with `Deploy and
-ingest` or `Deploy only`. The deployment step checks existing DCRs and updates
-them when they point to an old or different DCE. Azure can take a few minutes
-to propagate that association, so ingestion retries this specific 403 before
+associated with the data collection rule`, Azure may still be propagating the
+DCE/DCR association. The ingestion step retries this specific 403 before
 failing.
+
+If ingestion fails with `InvalidDceDcrCombination`, your local
+`schemas/<table>.deploy.json` probably points to an old DCE endpoint for an
+existing DCR. `Ingest only` now tries to refresh that metadata from Azure and
+retry. If it still fails, run the same path with `Deploy and ingest` or
+`Deploy only`; the deployment step checks existing DCRs and updates them when
+they point to an old or different DCE.
 
 If logs do not appear immediately, wait 5-10 minutes and rerun the KQL with a
 larger time window:

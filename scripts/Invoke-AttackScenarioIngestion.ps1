@@ -175,6 +175,79 @@ function Invoke-IngestionPost {
     }
 }
 
+function Invoke-AzRestJson {
+    param(
+        [Parameter(Mandatory = $true)][string]$Method,
+        [Parameter(Mandatory = $true)][string]$Uri
+    )
+
+    try { $null = Get-Command az -ErrorAction Stop } catch {
+        throw "Azure CLI (az) is required to refresh stale deployment metadata. Run this path with 'Deploy and ingest' or install Azure CLI."
+    }
+
+    $output = & az rest --method $Method --url $Uri -o json 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "az rest failed while refreshing deployment metadata: $($output -join "`n")"
+    }
+
+    $json = ($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join "`n"
+    if ([string]::IsNullOrWhiteSpace($json)) { return $null }
+    return $json | ConvertFrom-Json
+}
+
+function Get-IngestionUriFromDeploymentInfo {
+    param([Parameter(Mandatory = $true)]$DeployInfo)
+
+    $apiVersion = "2023-01-01"
+    return "$($DeployInfo.dceEndpoint)/dataCollectionRules/$($DeployInfo.immutableId)/streams/$($DeployInfo.streamName)?api-version=$apiVersion"
+}
+
+function Update-DeploymentInfoFromDcr {
+    param(
+        [Parameter(Mandatory = $true)]$DeployInfo,
+        [Parameter(Mandatory = $true)][string]$DeployInfoPath,
+        [Parameter(Mandatory = $true)][string]$TableName
+    )
+
+    if (-not $DeployInfo.PSObject.Properties['dcrId'] -or [string]::IsNullOrWhiteSpace($DeployInfo.dcrId)) {
+        throw "Deployment metadata for '$TableName' does not include dcrId. Run 'Deploy only' or 'Deploy and ingest' once to recreate schemas/$TableName.deploy.json."
+    }
+
+    $dcrApiVersion = "2023-03-11"
+    $dcr = Invoke-AzRestJson -Method "get" -Uri "https://management.azure.com$($DeployInfo.dcrId)?api-version=$dcrApiVersion"
+    if (-not $dcr -or -not $dcr.properties) {
+        throw "Could not read DCR from Azure for '$TableName'. Run 'Deploy only' or 'Deploy and ingest' to refresh it."
+    }
+
+    $dceId = [string]$dcr.properties.dataCollectionEndpointId
+    if ([string]::IsNullOrWhiteSpace($dceId)) {
+        throw "DCR '$($DeployInfo.dcrId)' has no dataCollectionEndpointId. Run 'Deploy only' or 'Deploy and ingest' to repair it."
+    }
+
+    $dce = Invoke-AzRestJson -Method "get" -Uri "https://management.azure.com$dceId?api-version=$dcrApiVersion"
+    $endpoint = [string]$dce.properties.logsIngestion.endpoint
+    if ([string]::IsNullOrWhiteSpace($endpoint)) {
+        throw "Could not read the Logs Ingestion endpoint from DCE '$dceId'. Run 'Deploy only' or 'Deploy and ingest' to refresh it."
+    }
+
+    $immutableId = [string]$dcr.properties.immutableId
+    if ([string]::IsNullOrWhiteSpace($immutableId)) {
+        $immutableId = [string]$DeployInfo.immutableId
+    }
+
+    $updated = [ordered]@{
+        dcrId       = [string]$DeployInfo.dcrId
+        tableName   = $TableName
+        immutableId = $immutableId
+        streamName  = [string]$DeployInfo.streamName
+        dceEndpoint = $endpoint.TrimEnd("/")
+    }
+
+    $updated | ConvertTo-Json -Depth 10 | Out-File -FilePath $DeployInfoPath -Encoding utf8
+    Write-Host "Refreshed deployment info for '$TableName': $DeployInfoPath" -ForegroundColor Green
+    return [pscustomobject]$updated
+}
+
 function Resolve-ActorValue {
     param(
         [string]$ActorType,
@@ -609,8 +682,7 @@ if ($Ingest) {
         Write-Host "`nIngesting $($records.Count) records into '$tableName'..." -ForegroundColor Cyan
 
         # Batch and send
-        $apiVersion = "2023-01-01"
-        $uri = "$($deployInfo.dceEndpoint)/dataCollectionRules/$($deployInfo.immutableId)/streams/$($deployInfo.streamName)?api-version=$apiVersion"
+        $uri = Get-IngestionUriFromDeploymentInfo -DeployInfo $deployInfo
         $headers = @{
             Authorization  = "Bearer $token"
             "Content-Type" = "application/json"
@@ -636,6 +708,7 @@ if ($Ingest) {
         if ($current.Count -gt 0) { $batches += , $current }
 
         $totalSent = 0
+        $deploymentInfoRefreshed = $false
         foreach ($batch in $batches) {
             $payload = $batch | ConvertTo-Json -Depth 20 -Compress
             if (-not $payload.StartsWith("[")) { $payload = "[$payload]" }
@@ -667,9 +740,19 @@ if ($Ingest) {
                 }
 
                 $isInvalidStream = ($responseBody -and $responseBody -match "InvalidStream")
+                $isInvalidDceDcrCombination = ($statusCode -eq 400 -and $responseBody -and $responseBody -match "InvalidDceDcrCombination")
                 $isDceAssociationPending = ($statusCode -eq 403 -and $responseBody -and $responseBody -match "not associated with the data collection rule")
                 $isRbacPropagationPending = ($statusCode -eq 403 -and $responseBody -and $responseBody -match "authentication token provided does not have access to ingest data")
                 $isRetryable = ($statusCode -in @(429, 500, 502, 503, 504)) -or $isTransportError
+
+                if ($isInvalidDceDcrCombination -and -not $deploymentInfoRefreshed) {
+                    Write-Host "Deployment metadata for '$tableName' points to a DCE that is not associated with the DCR. Refreshing from Azure..." -ForegroundColor Yellow
+                    $deployInfo = Update-DeploymentInfoFromDcr -DeployInfo $deployInfo -DeployInfoPath $deployInfoPath -TableName $tableName
+                    $uri = Get-IngestionUriFromDeploymentInfo -DeployInfo $deployInfo
+                    $deploymentInfoRefreshed = $true
+                    $attempt = 0
+                    continue
+                }
 
                 if (($isInvalidStream -or $isDceAssociationPending -or $isRbacPropagationPending -or $isRetryable) -and $attempt -lt ($maxAttempts - 1)) {
                     $attempt++

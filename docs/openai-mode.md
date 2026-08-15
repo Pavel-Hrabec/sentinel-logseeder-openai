@@ -99,6 +99,7 @@ Useful actions:
 
 - `Deploy and ingest`: creates/reuses ingestion resources, sends scenario rows, and asks whether to create an incident-generating Sentinel rule.
 - `Create detection rule`: creates or updates the stable Sentinel rule only, without sending logs.
+- `Ingest only`: sends logs using existing `schemas/*.deploy.json` metadata and can refresh stale DCE/DCR metadata if Azure reports that the saved endpoint no longer matches the DCR.
 - `Preview command only`: prints the deploy-and-ingest command without Azure changes.
 
 ### 2. Ingest Sample Data Into A Table
